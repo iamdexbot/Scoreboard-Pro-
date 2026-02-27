@@ -149,7 +149,7 @@
     }
 
     async function loginGoogle() {
-      const{error}=await _supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.origin+'/dashboard.html' } });
+      const{error}=await _supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href.replace(/\/[^\/]*$/, '/') + 'dashboard.html' } });
       if(error) showError(error.message);
     }
 
