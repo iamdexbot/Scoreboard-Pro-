@@ -3,6 +3,13 @@
    Tabs · Roster · Stats · Standings · History
    ========================================= */
 
+/* ── Body override for full-page app layout ── */
+body {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-bottom: 0 !important;
+}
+
 /* ── App shell replaces .scoreboard ──── */
 .app-shell {
   position: relative;
