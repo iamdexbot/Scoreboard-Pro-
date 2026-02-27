@@ -277,12 +277,15 @@
       window.location.href = 'dashboard.html';
     }
 
-    // Google OAuth
+    // Google OAuth — redirect URL built from current path so it works
+    // whether hosted at root or in a subfolder (e.g. GitHub Pages /repo/)
     async function loginGoogle() {
       hideMessages();
+      const base = window.location.href.replace(/\/[^\/]*$/, '/');
+      const redirectTo = base + 'dashboard.html';
       const { error } = await _supa.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin + '/dashboard.html' }
+        options: { redirectTo }
       });
       if (error) showError(error.message);
     }
