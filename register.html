@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — Basketball Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="login.html" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accent: #FF5E1A; --yellow: #FFD600; --red: #FF3333;
+      --dark: #080808; --panel: #111; --panel2: #181818;
+      --divider: #202020; --text: #F0EBE0; --muted: #555;
+    }
+    body {
+      background: var(--dark); min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Barlow Condensed', sans-serif; color: var(--text);
+      padding: 20px; position: relative; overflow: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,94,26,0.06) 0%, transparent 70%),
+        repeating-linear-gradient(90deg, rgba(255,94,26,0.02) 0, transparent 1px, transparent 80px),
+        repeating-linear-gradient(0deg,  rgba(255,94,26,0.02) 0, transparent 1px, transparent 80px);
+      pointer-events: none;
+    }
+    .orb { position:fixed; border-radius:50%; filter:blur(80px); pointer-events:none; opacity:0.1; animation:drift 12s ease-in-out infinite alternate; }
+    .orb-1 { width:350px;height:350px;background:var(--accent);bottom:-80px;right:-80px;animation-delay:0s; }
+    .orb-2 { width:280px;height:280px;background:#00C2FF;top:-60px;left:-60px;animation-delay:-5s; }
+    @keyframes drift { from{transform:translate(0,0)} to{transform:translate(25px,15px)} }
+
+    .login-card { position:relative;z-index:10;width:100%;max-width:420px;background:var(--panel);border:1px solid var(--divider);border-radius:12px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04); }
+    .card-top { background:var(--accent);padding:24px 32px 20px;text-align:center; }
+    .brand-name { font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:8px;color:#000;line-height:1; }
+    .brand-sub { font-size:11px;letter-spacing:4px;color:rgba(0,0,0,0.55);text-transform:uppercase;margin-top:4px; }
+    .card-body { padding:28px 32px 32px; }
+    .form-title { font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:var(--text);margin-bottom:20px;text-align:center; }
+    .form-group { margin-bottom:13px; }
+    .form-label { display:block;font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:5px; }
+    .form-input { width:100%;font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:1px;background:var(--panel2);border:1.5px solid var(--divider);color:var(--text);padding:11px 14px;border-radius:6px;outline:none;transition:border-color 0.2s;-webkit-appearance:none; }
+    .form-input:focus { border-color:var(--accent); }
+    .form-input::placeholder { color:#333; }
+    .btn-primary { width:100%;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;background:var(--accent);border:none;color:#000;padding:13px;border-radius:6px;cursor:pointer;transition:all 0.2s;margin-top:4px; }
+    .btn-primary:hover { filter:brightness(1.1); }
+    .btn-primary:disabled { opacity:0.5;cursor:not-allowed; }
+    .divider-line { display:flex;align-items:center;gap:12px;margin:16px 0; }
+    .divider-line::before,.divider-line::after { content:'';flex:1;height:1px;background:var(--divider); }
+    .divider-line span { font-size:11px;letter-spacing:2px;color:var(--muted); }
+    .btn-google { width:100%;font-family:'Barlow Condensed',sans-serif;font-size:15px;letter-spacing:2px;background:var(--panel2);border:1.5px solid var(--divider);color:var(--text);padding:11px;border-radius:6px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:10px; }
+    .btn-google:hover { border-color:#4285F4;color:#4285F4; }
+    .google-icon { width:18px;height:18px;flex-shrink:0; }
+    .card-footer { text-align:center;margin-top:20px;font-size:13px;letter-spacing:1px;color:var(--muted); }
+    .card-footer a { color:var(--accent);text-decoration:none;margin-left:4px; }
+    .error-msg { background:rgba(255,51,51,0.1);border:1px solid rgba(255,51,51,0.3);color:#ff6b6b;font-size:12px;letter-spacing:1px;padding:10px 14px;border-radius:5px;margin-bottom:14px;display:none; }
+    .error-msg.visible { display:block; }
+    .success-msg { background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);color:#00e676;font-size:12px;letter-spacing:1px;padding:10px 14px;border-radius:5px;margin-bottom:14px;display:none; }
+    .success-msg.visible { display:block; }
+    .spinner { display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .pwd-hint { font-size:10px;letter-spacing:1px;color:var(--muted);margin-top:4px; }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="login-card">
+    <div class="card-top">
+      <div class="brand-name">🏀 Hoops Pro</div>
+      <div class="brand-sub">Create Your Account</div>
+    </div>
+    <div class="card-body">
+      <div class="form-title">Sign Up</div>
+      <div class="error-msg"   id="errorMsg"></div>
+      <div class="success-msg" id="successMsg"></div>
+
+      <div class="form-group">
+        <label class="form-label">Display Name</label>
+        <input class="form-input" type="text" id="nameInput" placeholder="Your name or league name" maxlength="40"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="emailInput" placeholder="you@email.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="passwordInput" placeholder="At least 8 characters" autocomplete="new-password"/>
+        <div class="pwd-hint">Min 8 characters</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input class="form-input" type="password" id="confirmInput" placeholder="Same password again" autocomplete="new-password"/>
+      </div>
+
+      <button class="btn-primary" id="registerBtn" onclick="doRegister()">Create Account</button>
+
+      <div class="divider-line"><span>or</span></div>
+
+      <button class="btn-google" onclick="loginGoogle()">
+        <svg class="google-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Sign Up with Google
+      </button>
+
+      <div class="card-footer">Already have an account? <a href="login.html">Sign In</a></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    function showError(m)   { const e=document.getElementById('errorMsg');   e.textContent=m; e.classList.add('visible'); }
+    function showSuccess(m) { const s=document.getElementById('successMsg'); s.textContent=m; s.classList.add('visible'); }
+    function hideMessages() { document.getElementById('errorMsg').classList.remove('visible'); document.getElementById('successMsg').classList.remove('visible'); }
+    function setLoading(on) { const b=document.getElementById('registerBtn'); b.disabled=on; b.innerHTML=on?'<span class="spinner"></span>Creating...':'Create Account'; }
+
+    (async()=>{ const{data}=await _supa.auth.getSession(); if(data.session) window.location.href='dashboard.html'; })();
+
+    async function doRegister() {
+      hideMessages();
+      const name    = document.getElementById('nameInput').value.trim();
+      const email   = document.getElementById('emailInput').value.trim();
+      const pw      = document.getElementById('passwordInput').value;
+      const pw2     = document.getElementById('confirmInput').value;
+      if (!name)          { showError('Please enter a display name.'); return; }
+      if (!email)         { showError('Please enter your email.'); return; }
+      if (pw.length < 8)  { showError('Password must be at least 8 characters.'); return; }
+      if (pw !== pw2)     { showError('Passwords do not match.'); return; }
+      setLoading(true);
+      const { data, error } = await _supa.auth.signUp({
+        email, password: pw,
+        options: { data: { display_name: name } }
+      });
+      setLoading(false);
+      if (error) { showError(error.message); return; }
+      if (data.user && !data.session) {
+        showSuccess('Account created! Check your email to confirm, then sign in.');
+      } else if (data.session) {
+        window.location.href = 'dashboard.html';
+      }
+    }
+
+    async function loginGoogle() {
+      const{error}=await _supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.origin+'/dashboard.html' } });
+      if(error) showError(error.message);
+    }
+
+    document.getElementById('confirmInput').addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+  </script>
+</body>
+</html>

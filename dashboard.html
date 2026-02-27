@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Basketball Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accent: #FF5E1A; --yellow: #FFD600; --red: #FF3333;
+      --dark: #080808; --panel: #101010; --panel2: #171717;
+      --panel3: #1e1e1e; --divider: #1e1e1e; --text: #F0EBE0; --muted: #4a4a4a;
+      --home-color: #FF5E1A; --away-color: #00C2FF;
+      --green: #00e676;
+    }
+
+    body {
+      background: var(--dark);
+      font-family: 'Barlow Condensed', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(90deg,rgba(255,94,26,.018) 0,transparent 1px,transparent 120px),
+                  repeating-linear-gradient(0deg, rgba(255,94,26,.018) 0,transparent 1px,transparent 120px);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Nav bar ────────────────────────── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,10,0.95);
+      border-bottom: 1px solid var(--divider);
+      backdrop-filter: blur(12px);
+      display: flex; align-items: center;
+      padding: 0 20px;
+      height: 54px;
+      gap: 16px;
+    }
+    .nav-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: 4px;
+      color: var(--accent); text-decoration: none;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nav-brand span { opacity: 0.4; font-size: 14px; }
+
+    .nav-spacer { flex: 1; }
+
+    .nav-user {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; letter-spacing: 1px; color: var(--muted);
+    }
+    .nav-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent); display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: #000;
+      flex-shrink: 0;
+    }
+    .nav-signout {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      background: none; border: 1px solid #2a2a2a; color: var(--muted);
+      padding: 5px 12px; cursor: pointer; border-radius: 3px;
+      transition: all 0.2s;
+    }
+    .nav-signout:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── Page ─────────────────────────────── */
+    .page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+
+    /* ── Welcome banner ─────────────────── */
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(255,94,26,0.12), rgba(255,94,26,0.04));
+      border: 1px solid rgba(255,94,26,0.2);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      flex-wrap: wrap;
+    }
+    .welcome-text h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px; letter-spacing: 4px; color: var(--text);
+    }
+    .welcome-text p {
+      font-size: 13px; letter-spacing: 1px; color: var(--muted); margin-top: 3px;
+    }
+    .welcome-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-launch {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px; letter-spacing: 2px;
+      background: var(--accent); border: none; color: #000;
+      padding: 10px 20px; border-radius: 5px; cursor: pointer;
+      transition: all 0.2s; text-decoration: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-launch:hover { filter: brightness(1.1); }
+    .btn-launch.outline {
+      background: none; border: 1.5px solid var(--accent); color: var(--accent);
+    }
+    .btn-launch.outline:hover { background: rgba(255,94,26,0.1); }
+
+    /* ── Grid ─────────────────────────────── */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto;
+      gap: 14px;
+    }
+
+    /* ── Card base ────────────────────────── */
+    .dash-card {
+      background: var(--panel);
+      border: 1px solid var(--divider);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px; letter-spacing: 3px; color: var(--accent);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title .icon { font-size: 16px; }
+    .card-badge {
+      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      background: rgba(255,94,26,0.12); color: var(--accent);
+      padding: 2px 7px; border-radius: 10px; border: 1px solid rgba(255,94,26,0.2);
+    }
+    .card-badge.live { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.2); animation: pulse-live 2s ease-in-out infinite; }
+    @keyframes pulse-live { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .card-body { padding: 14px 16px; flex: 1; }
+
+    /* ── Live scoreboard card ─────────────── */
+    .span-full { grid-column: 1 / -1; }
+    .score-display-mini {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .score-team {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+    }
+    .score-team-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px; letter-spacing: 4px;
+    }
+    .score-team-name.home { color: var(--home-color); }
+    .score-team-name.away { color: var(--away-color); }
+    .score-team-logo {
+      width: 44px; height: 44px; object-fit: contain; border-radius: 4px;
+      opacity: 0;  transition: opacity 0.3s;
+    }
+    .score-team-logo.visible { opacity: 1; }
+    .score-pts {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 64px; line-height: 1; letter-spacing: -2px;
+    }
+    .score-pts.home { color: var(--home-color); }
+    .score-pts.away { color: var(--away-color); }
+
+    .score-center {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 0 12px;
+    }
+    .score-clock {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px; color: var(--yellow); letter-spacing: 1px;
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .score-period {
+      font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase;
+    }
+    .score-shot {
+      font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+      color: var(--red); letter-spacing: 1px;
+    }
+    .no-game-msg {
+      text-align: center; padding: 20px;
+      font-size: 13px; letter-spacing: 1px; color: var(--muted);
+    }
+    .no-game-msg a { color: var(--accent); text-decoration: none; }
+
+    /* ── Quick links card ─────────────────── */
+    .quick-links {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .ql-btn {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 5px;
+      background: var(--panel2);
+      border: 1px solid var(--divider);
+      border-radius: 7px; padding: 14px 8px;
+      text-decoration: none; color: var(--text);
+      transition: all 0.2s; cursor: pointer;
+      font-family: 'Barlow Condensed', sans-serif;
+      text-align: center;
+    }
+    .ql-btn:hover { border-color: var(--accent); background: rgba(255,94,26,0.06); color: var(--accent); }
+    .ql-btn .ql-icon { font-size: 22px; }
+    .ql-btn .ql-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+
+    /* ── Leaders card ─────────────────────── */
+    .leader-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .leader-row:last-child { border-bottom: none; }
+    .leader-rank {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px; color: var(--muted); min-width: 20px; text-align: center;
+    }
+    .leader-name { flex: 1; font-size: 14px; letter-spacing: 1px; }
+    .leader-team { font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+    .leader-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px; min-width: 36px; text-align: right;
+    }
+    .leader-val.pts { color: var(--home-color); }
+    .leader-val.reb { color: var(--away-color); }
+    .leader-val.ast { color: var(--yellow); }
+    .stat-type-tabs { display:flex; gap:4px; }
+    .stt { font-size:10px;letter-spacing:2px;text-transform:uppercase;background:none;border:1px solid var(--divider);color:var(--muted);padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .2s; }
+    .stt.active { border-color:var(--accent);color:var(--accent); }
+
+    /* ── Standings mini card ──────────────── */
+    .standings-mini { display: flex; flex-direction: column; gap: 2px; }
+    .sm-row {
+      display: grid; grid-template-columns: 24px 1fr 28px 28px 50px;
+      align-items: center; gap: 4px;
+      padding: 7px 4px; border-radius: 4px;
+      font-size: 13px; letter-spacing: 1px;
+      transition: background 0.15s;
+    }
+    .sm-row:hover { background: var(--panel2); }
+    .sm-row.leader { color: #fff; }
+    .sm-rank { font-family:'Bebas Neue',sans-serif; font-size:15px; color:var(--muted); text-align:center; }
+    .sm-rank.gold { color: var(--accent); }
+    .sm-team { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sm-w,.sm-l { text-align:center; color:var(--muted); font-size:13px; }
+    .sm-w { color:var(--green); }
+    .sm-wp { text-align:right; font-size:12px; color:var(--muted); }
+    .standings-header { display:grid;grid-template-columns:24px 1fr 28px 28px 50px;gap:4px;padding:0 4px 6px;border-bottom:1px solid var(--divider);margin-bottom:4px; }
+    .sh-cell { font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center; }
+    .sh-cell:nth-child(2) { text-align:left; }
+    .sh-cell:last-child { text-align:right; }
+
+    /* ── Roster mini ──────────────────────── */
+    .roster-team-block { margin-bottom: 14px; }
+    .roster-team-name {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:14px;letter-spacing:3px;margin-bottom:6px;
+    }
+    .roster-team-name.home { color:var(--home-color); }
+    .roster-team-name.away { color:var(--away-color); }
+    .roster-chips { display:flex;flex-wrap:wrap;gap:5px; }
+    .roster-chip {
+      font-size:11px;letter-spacing:1px;background:var(--panel2);border:1px solid var(--divider);
+      border-radius:4px;padding:3px 8px;display:flex;align-items:center;gap:4px;
+    }
+    .roster-chip .chip-num { color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:13px; }
+    .roster-chip .chip-pos { color:var(--muted);font-size:9px; }
+
+    /* ── Recent games ─────────────────────── */
+    .recent-game {
+      display:flex;align-items:center;gap:10px;padding:8px 0;
+      border-bottom:1px solid var(--divider); font-size:13px;
+    }
+    .recent-game:last-child { border-bottom:none; }
+    .rg-date { font-size:10px;letter-spacing:1px;color:var(--muted);min-width:60px; }
+    .rg-teams { flex:1; }
+    .rg-team { letter-spacing:1px; }
+    .rg-team.winner { color:var(--text);font-weight:600; }
+    .rg-score { font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px; }
+    .rg-score.winner { color:var(--accent); }
+    .rg-vs { color:var(--muted);font-size:11px; }
+
+    /* ── Upcoming games ───────────────────── */
+    .upcoming-form { display:flex;flex-direction:column;gap:8px;margin-bottom:12px; }
+    .upcoming-row { display:flex;gap:6px;align-items:center; }
+    .uf-input {
+      font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;
+      background:var(--panel2);border:1px solid var(--divider);color:var(--text);
+      padding:7px 10px;border-radius:4px;outline:none;flex:1;min-height:34px;
+    }
+    .uf-input:focus { border-color:var(--accent); }
+    .uf-input::placeholder { color:#333; }
+    .uf-btn {
+      font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;
+      background:var(--accent);border:none;color:#000;padding:7px 14px;
+      border-radius:4px;cursor:pointer;min-height:34px;white-space:nowrap;
+    }
+    .upcoming-list { display:flex;flex-direction:column;gap:6px; }
+    .upcoming-item {
+      display:flex;align-items:center;gap:8px;
+      background:var(--panel2);border:1px solid var(--divider);
+      border-radius:5px;padding:8px 10px;font-size:13px;letter-spacing:1px;
+    }
+    .up-date { color:var(--muted);font-size:11px;min-width:56px; }
+    .up-teams { flex:1; color:var(--text); }
+    .up-del { background:none;border:none;color:#333;cursor:pointer;padding:2px 6px;transition:color .15s; }
+    .up-del:hover { color:var(--red); }
+
+    /* ── Empty state ──────────────────────── */
+    .empty-cell { padding:16px 0;text-align:center;font-size:12px;letter-spacing:1px;color:var(--muted); }
+    .empty-cell a { color:var(--accent);text-decoration:none; }
+
+    /* ── Section label in card ────────────── */
+    .mini-section-label {
+      font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);
+      margin:10px 0 6px;display:block;
+    }
+
+    /* ── Responsive ───────────────────────── */
+    @media (max-width:800px) {
+      .dash-grid { grid-template-columns:1fr 1fr; }
+      .span-full  { grid-column:1/-1; }
+    }
+    @media (max-width:520px) {
+      .dash-grid { grid-template-columns:1fr; }
+      .span-full  { grid-column:1/-1; }
+      .score-pts  { font-size:48px; }
+      .welcome-banner { flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a class="nav-brand" href="dashboard.html">🏀 Hoops Pro <span>DASHBOARD</span></a>
+    <div class="nav-spacer"></div>
+    <div class="nav-user">
+      <div class="nav-avatar" id="navAvatar">?</div>
+      <span id="navUserName" style="display:none;"></span>
+      <button class="nav-signout" onclick="signOut()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- Welcome banner -->
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h1 id="welcomeHeading">Welcome back!</h1>
+        <p id="welcomeSub">Your basketball management dashboard</p>
+      </div>
+      <div class="welcome-actions">
+        <a class="btn-launch" href="index.html">🏀 Open Scoreboard</a>
+        <a class="btn-launch outline" href="stats.html" target="_blank">📊 Public Stats</a>
+      </div>
+    </div>
+
+    <!-- Dashboard grid -->
+    <div class="dash-grid">
+
+      <!-- ── LIVE SCOREBOARD STATUS (full width) ── -->
+      <div class="dash-card span-full">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🏟</span> Live Scoreboard</div>
+          <span class="card-badge live" id="liveBadge">LIVE</span>
+        </div>
+        <div class="card-body" id="liveScoreBody">
+          <div class="no-game-msg">No active game. <a href="index.html">Open the scoreboard</a> to start one.</div>
+        </div>
+      </div>
+
+      <!-- ── QUICK LINKS ── -->
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🚀</span> Quick Launch</div>
+        </div>
+        <div class="card-body">
+          <div class="quick-links">
+            <a class="ql-btn" href="index.html"><span class="ql-icon">🏀</span><span class="ql-label">Scoreboard</span></a>
+            <a class="ql-btn" href="viewer.html" target="_blank"><span class="ql-icon">📺</span><span class="ql-label">Viewer</span></a>
+            <a class="ql-btn" href="overlay.html" target="_blank"><span class="ql-icon">🎬</span><span class="ql-label">Overlay</span></a>
+            <a class="ql-btn" href="stats.html"   target="_blank"><span class="ql-icon">📊</span><span class="ql-label">Stats Page</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STAT LEADERS ── -->
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🏆</span> Leaders</div>
+          <div class="stat-type-tabs">
+            <button class="stt active" onclick="switchStat('pts',this)">PTS</button>
+            <button class="stt" onclick="switchStat('reb',this)">REB</button>
+            <button class="stt" onclick="switchStat('ast',this)">AST</button>
+          </div>
+        </div>
+        <div class="card-body" id="leadersBody">
+          <div class="empty-cell">No player data yet.</div>
+        </div>
+      </div>
+
+      <!-- ── STANDINGS ── -->
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📋</span> Standings</div>
+          <a href="stats.html#standings" class="card-badge" style="text-decoration:none;" target="_blank">Full →</a>
+        </div>
+        <div class="card-body" id="standingsBody">
+          <div class="empty-cell">No standings yet. <a href="index.html">Save a game</a>.</div>
+        </div>
+      </div>
+
+      <!-- ── ROSTER OVERVIEW ── -->
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">👥</span> Roster</div>
+          <a href="index.html" class="card-badge" style="text-decoration:none;">Edit →</a>
+        </div>
+        <div class="card-body" id="rosterBody">
+          <div class="empty-cell">No players. <a href="index.html">Add roster</a>.</div>
+        </div>
+      </div>
+
+      <!-- ── RECENT GAMES ── -->
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📄</span> Recent Games</div>
+        </div>
+        <div class="card-body" id="recentBody">
+          <div class="empty-cell">No games saved yet.</div>
+        </div>
+      </div>
+
+      <!-- ── UPCOMING GAMES ── -->
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📅</span> Schedule</div>
+        </div>
+        <div class="card-body">
+          <div class="upcoming-form">
+            <div class="upcoming-row">
+              <input class="uf-input" type="text" id="upTeams" placeholder="Home vs Away" />
+              <input class="uf-input" type="date" id="upDate" style="max-width:130px;" />
+            </div>
+            <button class="uf-btn" onclick="addUpcoming()">+ Add Game</button>
+          </div>
+          <div class="upcoming-list" id="upcomingList"></div>
+        </div>
+      </div>
+
+    </div><!-- /dash-grid -->
+  </div><!-- /page -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // ── Auth guard ─────────────────────────
+    let currentUser = null;
+    (async () => {
+      const session = await requireAuth();
+      if (!session) return;
+      currentUser = session.user;
+      const name = currentUser.user_metadata?.display_name || currentUser.email?.split('@')[0] || 'Coach';
+      document.getElementById('navAvatar').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('navUserName').textContent = name;
+      document.getElementById('welcomeHeading').textContent = 'Welcome back, ' + name + '!';
+      document.getElementById('welcomeSub').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+      loadAll();
+    })();
+
+    // ── LocalStorage helpers (same-device sync) ──
+    const proGet = k => { try { return JSON.parse(localStorage.getItem('pro_'+k)); } catch { return null; } };
+    const sbGet  = () => { try { return JSON.parse(localStorage.getItem('scoreboard')); } catch { return null; } };
+
+    let currentStat = 'pts';
+    let upcomingGames = JSON.parse(localStorage.getItem('dash_upcoming') || '[]');
+
+    function loadAll() {
+      renderLive();
+      renderLeaders(currentStat);
+      renderStandings();
+      renderRoster();
+      renderRecent();
+      renderUpcoming();
+    }
+
+    // ── Live scoreboard ────────────────────
+    function renderLive() {
+      const s = sbGet();
+      const el = document.getElementById('liveScoreBody');
+      const badge = document.getElementById('liveBadge');
+      if (!s || (s.homeScore === 0 && s.awayScore === 0 && !s.timerRunning)) {
+        el.innerHTML = '<div class="no-game-msg">No active game. <a href="index.html">Open the scoreboard</a> to start one.</div>';
+        badge.className = 'card-badge';
+        badge.textContent = 'OFFLINE';
+        return;
+      }
+      badge.className = 'card-badge live';
+      badge.textContent = s.timerRunning ? 'LIVE' : 'PAUSED';
+      const fmt = cs => {
+        if(cs==null) return '--:--';
+        const m=Math.floor(cs/6000), sec=Math.floor((cs%6000)/100);
+        return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+      };
+      el.innerHTML = `
+        <div class="score-display-mini">
+          <div class="score-team">
+            <img class="score-team-logo ${s.homeLogoData?'visible':''}" id="dbHomeLogo" src="${s.homeLogoData||''}" />
+            <div class="score-team-name home">${s.homeName||'HOME'}</div>
+            <div class="score-pts home">${s.homeScore||0}</div>
+          </div>
+          <div class="score-center">
+            <div class="score-clock">${fmt(s.timerCentiseconds)}</div>
+            <div class="score-period">${s.periodLabel||'1st Quarter'}</div>
+            <div class="score-shot" style="color:var(--red)">${s.shotClockSeconds||'--'}s</div>
+          </div>
+          <div class="score-team">
+            <img class="score-team-logo ${s.awayLogoData?'visible':''}" id="dbAwayLogo" src="${s.awayLogoData||''}" />
+            <div class="score-team-name away">${s.awayName||'AWAY'}</div>
+            <div class="score-pts away">${s.awayScore||0}</div>
+          </div>
+        </div>`;
+    }
+
+    // ── Leaders ────────────────────────────
+    function switchStat(stat, btn) {
+      currentStat = stat;
+      document.querySelectorAll('.stt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderLeaders(stat);
+    }
+
+    function renderLeaders(stat) {
+      const el = document.getElementById('leadersBody');
+      const roster = proGet('roster') || { home:[], away:[] };
+      const stats  = proGet('stats')  || { home:{}, away:{} };
+      const sb     = sbGet();
+      const homeName = sb?.homeName || 'HOME';
+      const awayName = sb?.awayName || 'AWAY';
+
+      const all = [];
+      ['home','away'].forEach(side => {
+        const tname = side==='home' ? homeName : awayName;
+        (roster[side]||[]).forEach(p => {
+          const s = (stats[side]||{})[p.id] || {};
+          all.push({ name:p.name, num:p.num, team:tname, val: s[stat]||0, stat });
+        });
+      });
+      all.sort((a,b)=>b.val-a.val);
+      const top = all.slice(0,5);
+      if (!top.length || top[0].val===0) {
+        el.innerHTML = '<div class="empty-cell">No stats recorded yet.</div>'; return;
+      }
+      el.innerHTML = top.map((p,i) => `
+        <div class="leader-row">
+          <div class="leader-rank">${i+1}</div>
+          <div>
+            <div class="leader-name">#${p.num} ${p.name}</div>
+            <div class="leader-team">${p.team}</div>
+          </div>
+          <div class="leader-val ${stat}">${p.val}</div>
+        </div>`).join('');
+    }
+
+    // ── Standings ──────────────────────────
+    function renderStandings() {
+      const el = document.getElementById('standingsBody');
+      const standings = proGet('standings') || [];
+      if (!standings.length) { el.innerHTML='<div class="empty-cell">No standings yet.</div>'; return; }
+      el.innerHTML = `
+        <div class="standings-header">
+          <div class="sh-cell">#</div><div class="sh-cell">Team</div>
+          <div class="sh-cell">W</div><div class="sh-cell">L</div><div class="sh-cell">Win%</div>
+        </div>
+        <div class="standings-mini">
+          ${standings.slice(0,6).map((t,i)=>{
+            const gp=t.w+t.l; const wp=gp?(t.w/gp*100).toFixed(0):'0';
+            return `<div class="sm-row ${i===0?'leader':''}">
+              <div class="sm-rank ${i===0?'gold':''}">${i+1}</div>
+              <div class="sm-team">${t.name}</div>
+              <div class="sm-w">${t.w}</div>
+              <div class="sm-l">${t.l}</div>
+              <div class="sm-wp">${wp}%</div>
+            </div>`;
+          }).join('')}
+        </div>`;
+    }
+
+    // ── Roster ─────────────────────────────
+    function renderRoster() {
+      const el = document.getElementById('rosterBody');
+      const roster = proGet('roster') || { home:[], away:[] };
+      const sb = sbGet();
+      const homeName = sb?.homeName || 'HOME';
+      const awayName = sb?.awayName || 'AWAY';
+      const total = (roster.home||[]).length + (roster.away||[]).length;
+      if (!total) { el.innerHTML='<div class="empty-cell">No players added yet. <a href="index.html">Add roster</a>.</div>'; return; }
+
+      const teamBlock = (players, name, side) => {
+        if (!players.length) return '';
+        return `<div class="roster-team-block">
+          <div class="roster-team-name ${side}">${name} <span style="font-size:11px;color:var(--muted);letter-spacing:1px">(${players.length})</span></div>
+          <div class="roster-chips">
+            ${players.map(p=>`<div class="roster-chip"><span class="chip-num">#${p.num}</span>${p.name}<span class="chip-pos">${p.pos}</span></div>`).join('')}
+          </div>
+        </div>`;
+      };
+      el.innerHTML = teamBlock(roster.home||[], homeName,'home') + teamBlock(roster.away||[], awayName,'away');
+    }
+
+    // ── Recent games ───────────────────────
+    function renderRecent() {
+      const el = document.getElementById('recentBody');
+      const history = proGet('history') || [];
+      if (!history.length) { el.innerHTML='<div class="empty-cell">No games saved yet.</div>'; return; }
+      el.innerHTML = history.slice(0,5).map(g => {
+        const hw = g.homeScore > g.awayScore;
+        return `<div class="recent-game">
+          <div class="rg-date">${g.date}</div>
+          <div class="rg-teams">
+            <div class="rg-team ${hw?'winner':''}">${g.homeName}</div>
+            <div class="rg-team ${!hw?'winner':''}">${g.awayName}</div>
+          </div>
+          <div>
+            <div class="rg-score ${hw?'winner':''}">${g.homeScore}</div>
+            <div class="rg-score ${!hw?'winner':''}">${g.awayScore}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Upcoming games ─────────────────────
+    function renderUpcoming() {
+      const el = document.getElementById('upcomingList');
+      upcomingGames.sort((a,b)=>new Date(a.date)-new Date(b.date));
+      if (!upcomingGames.length) { el.innerHTML='<div class="empty-cell" style="padding:0">No scheduled games.</div>'; return; }
+      el.innerHTML = upcomingGames.map((g,i) => {
+        const d = g.date ? new Date(g.date+'T00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+        return `<div class="upcoming-item">
+          <span class="up-date">${d}</span>
+          <span class="up-teams">${g.teams}</span>
+          <button class="up-del" onclick="removeUpcoming(${i})">✕</button>
+        </div>`;
+      }).join('');
+    }
+
+    function addUpcoming() {
+      const teams = document.getElementById('upTeams').value.trim();
+      const date  = document.getElementById('upDate').value;
+      if (!teams) return;
+      upcomingGames.push({ teams, date });
+      localStorage.setItem('dash_upcoming', JSON.stringify(upcomingGames));
+      document.getElementById('upTeams').value = '';
+      document.getElementById('upDate').value  = '';
+      renderUpcoming();
+    }
+
+    function removeUpcoming(i) {
+      upcomingGames.splice(i,1);
+      localStorage.setItem('dash_upcoming', JSON.stringify(upcomingGames));
+      renderUpcoming();
+    }
+
+    // ── Auto-refresh live data ─────────────
+    setInterval(() => { renderLive(); }, 2000);
+    setInterval(() => { renderLeaders(currentStat); renderStandings(); renderRoster(); renderRecent(); }, 10000);
+  </script>
+</body>
+</html>

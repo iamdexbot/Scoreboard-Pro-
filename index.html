@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Basketball Pro — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="pro.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js"></script>
+</head>
+<body>
+<script>
+  // Auth guard — redirect to login if not signed in
+  (async () => {
+    const s = await requireAuth();
+    if (!s) return;
+    // Show current user in header
+    const name = s.user.user_metadata?.display_name || s.user.email?.split('@')[0] || 'Coach';
+    const lbl = document.getElementById('appUserLabel');
+    if (lbl) lbl.textContent = name;
+  })();
+</script>
+
+  <div class="flash" id="flash"></div>
+
+  <!-- ═══ APP SHELL ═══ -->
+  <div class="app-shell">
+
+    <!-- Top header (always visible) -->
+    <div class="app-header">
+      <span class="app-brand header-logo-link" id="headerLeagueName" onclick="openLeagueEditor()">&#x2B21; Hoops</span>
+      <span class="app-period" id="periodLabel">1st Quarter</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="appUserLabel" style="font-size:11px;letter-spacing:1px;color:rgba(0,0,0,0.55);"></span>
+        <a href="dashboard.html" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.25);color:#000;padding:4px 10px;border-radius:3px;text-decoration:none;">&#8592; Dashboard</a>
+      </div>
+    </div>
+
+    <!-- Tab navigation -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="scoreboard">&#127936; Board</button>
+      <button class="tab-btn" data-tab="roster">&#128101; Roster</button>
+      <button class="tab-btn" data-tab="stats">&#128202; Stats</button>
+      <button class="tab-btn" data-tab="standings">&#127942; Standings</button>
+      <button class="tab-btn" data-tab="history">&#128196; History</button>
+    </nav>
+
+    <!-- ════════════════════════════════════
+         TAB: SCOREBOARD
+    ════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-scoreboard">
+
+      <!-- Scores -->
+      <div class="scores-row">
+        <div class="team home">
+          <input class="team-name-input" id="homeName" value="HOME" maxlength="12" />
+          <div class="score-display" id="homeScore">0</div>
+          <div class="score-btns">
+            <button class="btn pts3" onclick="addScore('home',3)">+3</button>
+            <button class="btn pts2" onclick="addScore('home',2)">+2</button>
+            <button class="btn pts1" onclick="addScore('home',1)">+1</button>
+            <button class="btn minus" onclick="addScore('home',-1)">&#8722;</button>
+          </div>
+          <div class="logo-upload-zone" id="homeLogoZone" onclick="document.getElementById('homeLogoInput').click()">
+            <img class="logo-preview" id="homeLogoImg" src="" alt="" style="display:none;" />
+            <span class="logo-placeholder" id="homeLogoPlaceholder">+ Logo</span>
+            <button class="logo-remove" id="homeLogoRemove" onclick="removeLogo(event,'home')" style="display:none;">&#10005;</button>
+          </div>
+          <input type="file" id="homeLogoInput" accept="image/*" style="display:none;" onchange="uploadLogo(event,'home')" />
+        </div>
+
+        <div class="team away">
+          <input class="team-name-input" id="awayName" value="AWAY" maxlength="12" />
+          <div class="score-display" id="awayScore">0</div>
+          <div class="score-btns">
+            <button class="btn pts3" onclick="addScore('away',3)">+3</button>
+            <button class="btn pts2" onclick="addScore('away',2)">+2</button>
+            <button class="btn pts1" onclick="addScore('away',1)">+1</button>
+            <button class="btn minus" onclick="addScore('away',-1)">&#8722;</button>
+          </div>
+          <div class="logo-upload-zone" id="awayLogoZone" onclick="document.getElementById('awayLogoInput').click()">
+            <img class="logo-preview" id="awayLogoImg" src="" alt="" style="display:none;" />
+            <span class="logo-placeholder" id="awayLogoPlaceholder">+ Logo</span>
+            <button class="logo-remove" id="awayLogoRemove" onclick="removeLogo(event,'away')" style="display:none;">&#10005;</button>
+          </div>
+          <input type="file" id="awayLogoInput" accept="image/*" style="display:none;" onchange="uploadLogo(event,'away')" />
+        </div>
+      </div>
+
+      <!-- Clocks -->
+      <div class="clocks-row">
+        <div class="clock-cell">
+          <div class="section-label">QUARTER CLOCK</div>
+          <div class="timer" id="timer">12:00.00</div>
+          <div class="timer-controls">
+            <div class="btn-icon" id="playBtn" onclick="toggleTimer()">&#9654;</div>
+            <div class="btn-icon" onclick="resetTimer()">&#8635;</div>
+            <div class="btn-icon edit-mins-btn" onclick="openMinsEditor()">&#9998;</div>
+          </div>
+        </div>
+        <div class="period-cell">
+          <div class="period-num" id="periodNum">1</div>
+          <div class="period-sub">Period</div>
+          <div class="period-btns">
+            <div class="btn-icon sm" onclick="changePeriod(-1)">&#8722;</div>
+            <div class="btn-icon sm" onclick="changePeriod(1)">+</div>
+          </div>
+        </div>
+        <div class="clock-cell">
+          <div class="section-label">SHOT CLOCK</div>
+          <div class="shot-clock" id="shotClock">24</div>
+          <div class="shot-clock-controls">
+            <div class="btn-icon sc-btn" onclick="setShotClock(24)">24</div>
+            <div class="btn-icon sc-btn" onclick="setShotClock(14)">14</div>
+            <div class="btn-icon" id="scPlayBtn" onclick="toggleShotClock()">&#9654;</div>
+            <div class="btn-icon" onclick="resetShotClock()">&#8635;</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fouls -->
+      <div class="fouls-row">
+        <div class="fouls-panel">
+          <span class="fouls-label">Fouls</span>
+          <div class="fouls-dots" id="homeDotsContainer"></div>
+          <span class="fouls-count" id="homeFoulsCount">0</span>
+        </div>
+        <div class="fouls-panel">
+          <span class="fouls-count" id="awayFoulsCount">0</span>
+          <div class="fouls-dots" id="awayDotsContainer"></div>
+          <span class="fouls-label">Fouls</span>
+        </div>
+      </div>
+
+      <!-- Timeouts -->
+      <div class="timeouts-row">
+        <div class="timeouts-header">
+          <span class="timeouts-title">Timeouts</span>
+          <button class="btn-icon sm to-setup-btn" onclick="openTimeoutSetup()">&#9881;</button>
+        </div>
+        <div class="timeouts-body">
+          <div class="timeout-panel home">
+            <span class="timeout-label">Timeouts</span>
+            <div class="timeout-dots" id="homeTimeoutDots"></div>
+            <span class="timeout-count" id="homeTimeoutsCount">5</span>
+            <div class="timeout-btns">
+              <button class="btn-icon sm to-use" onclick="useTimeout('home')">&#8722;</button>
+              <button class="btn-icon sm to-restore" onclick="restoreTimeout('home')">+</button>
+            </div>
+          </div>
+          <div class="timeout-panel away">
+            <div class="timeout-btns">
+              <button class="btn-icon sm to-restore" onclick="restoreTimeout('away')">+</button>
+              <button class="btn-icon sm to-use" onclick="useTimeout('away')">&#8722;</button>
+            </div>
+            <span class="timeout-count" id="awayTimeoutsCount">5</span>
+            <div class="timeout-dots" id="awayTimeoutDots"></div>
+            <span class="timeout-label">Timeouts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save game CTA -->
+      <div class="save-game-bar">
+        <button class="save-game-btn" onclick="saveGame()">&#128190; Save Game to History &amp; Standings</button>
+      </div>
+
+    </div><!-- /tab-scoreboard -->
+
+    <!-- ════════════════════════════════════
+         TAB: ROSTER
+    ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-roster">
+      <div class="pro-two-col">
+
+        <!-- Home Roster -->
+        <div class="pro-col">
+          <div class="pro-col-header home-accent">
+            <span id="homeRosterTitle">HOME</span>
+          </div>
+          <div class="add-player-form">
+            <input type="number" class="player-num-input" id="homePlayerNum" placeholder="#" min="0" max="99" />
+            <input type="text"   class="player-name-input" id="homePlayerName" placeholder="Player name" maxlength="20" />
+            <select class="player-pos-select" id="homePlayerPos">
+              <option>PG</option><option>SG</option><option>SF</option><option>PF</option><option>C</option><option value="-">-</option>
+            </select>
+            <button class="add-player-btn" onclick="addPlayer('home')">+ Add</button>
+          </div>
+          <div class="roster-list" id="homeRosterList"></div>
+        </div>
+
+        <!-- Away Roster -->
+        <div class="pro-col">
+          <div class="pro-col-header away-accent">
+            <span id="awayRosterTitle">AWAY</span>
+          </div>
+          <div class="add-player-form">
+            <input type="number" class="player-num-input" id="awayPlayerNum" placeholder="#" min="0" max="99" />
+            <input type="text"   class="player-name-input" id="awayPlayerName" placeholder="Player name" maxlength="20" />
+            <select class="player-pos-select" id="awayPlayerPos">
+              <option>PG</option><option>SG</option><option>SF</option><option>PF</option><option>C</option><option value="-">-</option>
+            </select>
+            <button class="add-player-btn" onclick="addPlayer('away')">+ Add</button>
+          </div>
+          <div class="roster-list" id="awayRosterList"></div>
+        </div>
+
+      </div>
+    </div><!-- /tab-roster -->
+
+    <!-- ════════════════════════════════════
+         TAB: STATS
+    ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-stats">
+
+      <!-- Sticky stat button panel -->
+      <div class="stat-btn-panel" id="statBtnPanel">
+        <div class="stat-player-label" id="statPlayerLabel">Select a player below</div>
+        <div class="stat-btns-grid">
+          <button class="stat-btn pts"  onclick="recordStat('pts', 1)">+PTS</button>
+          <button class="stat-btn reb"  onclick="recordStat('reb', 1)">+REB</button>
+          <button class="stat-btn ast"  onclick="recordStat('ast', 1)">+AST</button>
+          <button class="stat-btn stl"  onclick="recordStat('stl', 1)">+STL</button>
+          <button class="stat-btn blk"  onclick="recordStat('blk', 1)">+BLK</button>
+          <button class="stat-btn to"   onclick="recordStat('to',  1)">+TO</button>
+          <button class="stat-btn pf"   onclick="recordStat('pf',  1)">+FOUL</button>
+          <button class="stat-btn undo" onclick="recordStat('pts',-1)">&#8722;PTS</button>
+        </div>
+      </div>
+
+      <div class="pro-two-col stats-teams">
+        <div class="pro-col">
+          <div class="pro-col-header home-accent"><span id="homeStatsTitle">HOME</span></div>
+          <div class="stats-list" id="homeStatsList"></div>
+        </div>
+        <div class="pro-col">
+          <div class="pro-col-header away-accent"><span id="awayStatsTitle">AWAY</span></div>
+          <div class="stats-list" id="awayStatsList"></div>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px;">
+        <button class="danger-btn" onclick="resetGameStats()">&#8635; Reset All Stats</button>
+      </div>
+
+    </div><!-- /tab-stats -->
+
+    <!-- ════════════════════════════════════
+         TAB: STANDINGS
+    ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-standings">
+      <div class="standings-wrap">
+        <div class="standings-toolbar">
+          <span class="standings-title">League Standings</span>
+          <button class="danger-btn sm" onclick="resetStandings()">Clear</button>
+        </div>
+        <div class="standings-table-wrap">
+          <table class="standings-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="team-name-cell">Team</th>
+                <th>W</th>
+                <th>L</th>
+                <th>Win%</th>
+                <th>GB</th>
+                <th>+/-</th>
+                <th>Streak</th>
+              </tr>
+            </thead>
+            <tbody id="standingsBody">
+              <tr><td colspan="8" class="standings-empty">No games saved yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /tab-standings -->
+
+    <!-- ════════════════════════════════════
+         TAB: HISTORY
+    ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-history">
+      <div class="history-toolbar">
+        <span class="standings-title">Game History</span>
+        <button class="danger-btn sm" onclick="clearHistory()">Clear All</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="history-empty">No games saved yet.</div>
+      </div>
+    </div><!-- /tab-history -->
+
+    <!-- ════════════════════════════════════
+         STICKY FOOTER (always visible)
+    ════════════════════════════════════ -->
+    <div class="footer">
+      <div class="possession">
+        <span class="poss-label">Ball</span>
+        <div class="poss-arrow home" id="possHome" onclick="setPossession('home')"></div>
+        <div class="poss-arrow away inactive" id="possAway" onclick="setPossession('away')"></div>
+      </div>
+      <button class="buzzer-btn" onclick="buzzer()">&#128276; BUZZER</button>
+      <div class="footer-right">
+        <button class="footer-sm-btn theme-btn"       onclick="openThemeModal()"                     title="Theme">&#127912;</button>
+        <button class="footer-sm-btn viewer-link-btn"  onclick="window.open('viewer.html','_blank')"  title="Viewer">&#128250;</button>
+        <button class="footer-sm-btn overlay-link-btn" onclick="window.open('overlay.html','_blank')" title="Overlay">&#127909;</button>
+        <button class="footer-sm-btn stats-link-btn"   onclick="window.open('stats.html','_blank')"   title="Stats Page">&#128202;</button>
+        <button class="footer-sm-btn reset-btn"        onclick="resetAll()"                           title="Reset">&#8635;</button>
+      </div>
+    </div>
+
+  </div><!-- /app-shell -->
+
+  <!-- ═══ MODALS ═══ -->
+
+  <!-- Minutes -->
+  <div class="modal-overlay" id="minsModal">
+    <div class="modal">
+      <div class="modal-title">Minutes Per Quarter</div>
+      <div class="modal-body">
+        <div class="mins-options">
+          <button class="mins-opt" onclick="setMinsPerQuarter(5)">5</button>
+          <button class="mins-opt" onclick="setMinsPerQuarter(10)">10</button>
+          <button class="mins-opt" onclick="setMinsPerQuarter(12)">12</button>
+          <button class="mins-opt" onclick="setMinsPerQuarter(15)">15</button>
+          <button class="mins-opt" onclick="setMinsPerQuarter(20)">20</button>
+        </div>
+        <div class="custom-mins">
+          <input type="number" id="customMins" min="1" max="60" placeholder="Custom (1-60)" />
+          <button class="btn" onclick="applyCustomMins()">Set</button>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeMinsEditor()">Close</button>
+    </div>
+  </div>
+
+  <!-- Theme -->
+  <div class="modal-overlay" id="themeModal">
+    <div class="modal theme-modal">
+      <div class="modal-title">&#127912; Theme</div>
+      <div class="modal-body">
+        <div class="theme-section-label">Presets</div>
+        <div class="theme-presets" id="themePresets"></div>
+        <div class="theme-section-label" style="margin-top:18px;">Custom Colors</div>
+        <div class="theme-custom-grid">
+          <div class="theme-custom-row"><label>Header / Accent</label><input type="color" id="colorAccent" value="#FF5E1A" oninput="applyCustomTheme()" /></div>
+          <div class="theme-custom-row"><label>Home Team</label><input type="color" id="colorHome"   value="#FF5E1A" oninput="applyCustomTheme()" /></div>
+          <div class="theme-custom-row"><label>Away Team</label><input type="color" id="colorAway"   value="#00C2FF" oninput="applyCustomTheme()" /></div>
+          <div class="theme-custom-row"><label>Clock</label><input type="color" id="colorClock"  value="#FFD600" oninput="applyCustomTheme()" /></div>
+          <div class="theme-custom-row"><label>Background</label><input type="color" id="colorBg"    value="#0D0D0D" oninput="applyCustomTheme()" /></div>
+          <div class="theme-custom-row"><label>Panel</label><input type="color" id="colorPanel"  value="#161616" oninput="applyCustomTheme()" /></div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeThemeModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- League name -->
+  <div class="modal-overlay" id="leagueModal">
+    <div class="modal">
+      <div class="modal-title">League Name</div>
+      <div class="modal-body">
+        <div class="custom-mins">
+          <input type="text" id="leagueInput" maxlength="20" placeholder="e.g. NBA, PBA, UAAP"
+            style="width:200px;font-family:'Barlow Condensed',sans-serif;font-size:18px;background:var(--panel2);border:1.5px solid #444;color:var(--text);padding:8px 12px;border-radius:2px;outline:none;letter-spacing:1px;" />
+          <button class="btn" onclick="applyLeagueName()">Set</button>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeLeagueEditor()">Close</button>
+    </div>
+  </div>
+
+  <!-- Timeout setup -->
+  <div class="modal-overlay" id="timeoutSetupModal">
+    <div class="modal">
+      <div class="modal-title">&#9881; Timeout Setup</div>
+      <div class="modal-body">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;text-align:center;margin-bottom:4px;">Timeouts per team</div>
+        <div class="mins-options">
+          <button class="mins-opt to-opt" data-val="2" onclick="setMaxTimeouts(2)">2</button>
+          <button class="mins-opt to-opt" data-val="3" onclick="setMaxTimeouts(3)">3</button>
+          <button class="mins-opt to-opt" data-val="4" onclick="setMaxTimeouts(4)">4</button>
+          <button class="mins-opt to-opt" data-val="5" onclick="setMaxTimeouts(5)">5</button>
+          <button class="mins-opt to-opt" data-val="6" onclick="setMaxTimeouts(6)">6</button>
+        </div>
+        <div class="custom-mins">
+          <input type="number" id="customToInput" min="1" max="10" placeholder="Custom (1-10)" />
+          <button class="btn" onclick="applyCustomTimeouts()">Set</button>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeTimeoutSetup()">Close</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="pro.js"></script>
+</body>
+</html>

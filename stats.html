@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stats — Basketball Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accent: #FF5E1A; --yellow: #FFD600; --red: #FF3333;
+      --dark: #080808; --panel: #111; --panel2: #181818;
+      --divider: #1e1e1e; --text: #F0EBE0; --muted: #555;
+      --home-color: #FF5E1A; --away-color: #00C2FF;
+    }
+
+    body {
+      background: var(--dark);
+      font-family: 'Barlow Condensed', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(90deg,rgba(255,94,26,.015) 0,transparent 1px,transparent 100px),
+                  repeating-linear-gradient(0deg,rgba(255,94,26,.015) 0,transparent 1px,transparent 100px);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Page header ─────────────────────── */
+    .page-header {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 24px;
+      transition: background 0.4s;
+    }
+    .page-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:5px; color:#000; }
+    .page-sub   { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:3px; color:#000; opacity:.7; }
+    .admin-link {
+      font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:2px;
+      text-transform:uppercase; background:rgba(0,0,0,0.2); border:1px solid rgba(0,0,0,0.3);
+      color:#000; padding:5px 12px; cursor:pointer; border-radius:3px; text-decoration:none;
+      transition:background 0.2s;
+    }
+    .admin-link:hover { background:rgba(0,0,0,0.35); }
+
+    /* ── Section tabs ────────────────────── */
+    .section-tabs {
+      display: flex;
+      background: #080808;
+      border-bottom: 1px solid #1a1a1a;
+      position: sticky; top: 42px; z-index: 40;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .section-tabs::-webkit-scrollbar { display: none; }
+    .stab {
+      font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:2px;
+      text-transform:uppercase; background:none; border:none; color:var(--muted);
+      padding:11px 20px; cursor:pointer; white-space:nowrap; position:relative; transition:color .2s;
+    }
+    .stab::after {
+      content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+      background:var(--accent); transform:scaleX(0); transition:transform .2s;
+    }
+    .stab.active { color:var(--accent); }
+    .stab.active::after { transform:scaleX(1); }
+
+    /* ── Content wrapper ─────────────────── */
+    .content { max-width: 1100px; margin: 0 auto; padding: 0; position: relative; z-index: 1; }
+
+    .section { display: none; padding: 20px 16px; }
+    .section.active { display: block; }
+
+    /* ── Section headings ────────────────── */
+    .section-heading {
+      font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:4px;
+      color:var(--accent); margin-bottom:16px; display:flex;
+      align-items:center; gap:10px;
+    }
+    .section-heading .game-badge {
+      font-size:11px; letter-spacing:2px; font-family:'Barlow Condensed',sans-serif;
+      background:rgba(255,94,26,0.15); color:var(--accent); padding:3px 8px; border-radius:2px;
+    }
+
+    /* ── Team color headers ──────────────── */
+    .team-header-home { color:var(--home-color); border-bottom-color:var(--home-color); }
+    .team-header-away { color:var(--away-color); border-bottom-color:var(--away-color); }
+
+    /* ── Box score table ─────────────────── */
+    .box-table-wrap { overflow-x:auto; margin-bottom:24px; border-radius:4px; border:1px solid var(--divider); }
+    .box-table {
+      width:100%; border-collapse:collapse; min-width:500px; font-size:13px;
+    }
+    .box-table thead th {
+      font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted);
+      padding:10px 10px 8px; border-bottom:1px solid #252525; text-align:center;
+      background:var(--panel2); white-space:nowrap;
+    }
+    .box-table thead th.name-col { text-align:left; }
+    .box-table td {
+      padding:10px 10px; border-bottom:1px solid var(--divider);
+      text-align:center; color:#bbb; font-family:'Barlow Condensed',sans-serif;
+    }
+    .box-table td.name-col { text-align:left; color:var(--text); }
+    .box-table td.num-col  { color:var(--muted); font-family:'Bebas Neue',sans-serif; font-size:15px; }
+    .box-table td.pts-col  { color:var(--accent); font-weight:700; font-size:15px; }
+    .box-table tr:hover td { background:#141414; }
+    .box-table tfoot td {
+      color:var(--text); font-weight:600; background:var(--panel2);
+      border-top:2px solid #333; border-bottom:none;
+    }
+    .box-table tfoot td.pts-col { color:var(--accent); font-size:16px; }
+
+    /* ── Leader cards ────────────────────── */
+    .leaders-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-bottom:24px;
+    }
+    .leader-card {
+      background:var(--panel2); border:1px solid var(--divider); border-radius:6px;
+      padding:14px 14px; display:flex; flex-direction:column; gap:4px;
+      transition:border-color .2s;
+    }
+    .leader-card:hover { border-color:#333; }
+    .leader-stat-name { font-size:9px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; }
+    .leader-name { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:2px; color:var(--text); line-height:1; }
+    .leader-team { font-size:10px; letter-spacing:1px; color:var(--muted); }
+    .leader-value { font-family:'Bebas Neue',sans-serif; font-size:36px; line-height:1; margin-top:4px; }
+    .leader-value.pts { color:var(--home-color); }
+    .leader-value.reb { color:#00C2FF; }
+    .leader-value.ast { color:var(--yellow); }
+    .leader-value.stl { color:#00e676; }
+    .leader-value.blk { color:#b06aff; }
+
+    /* ── Standings table ─────────────────── */
+    .standings-table-wrap { overflow-x:auto; border:1px solid var(--divider); border-radius:4px; }
+    .standings-table {
+      width:100%; border-collapse:collapse; min-width:400px; font-size:13px;
+    }
+    .standings-table thead th {
+      font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted);
+      padding:10px 12px 8px; border-bottom:1px solid #252525; text-align:center;
+      background:var(--panel2); white-space:nowrap;
+    }
+    .standings-table thead th.team-name-cell { text-align:left; }
+    .standings-table td {
+      padding:11px 12px; border-bottom:1px solid var(--divider);
+      text-align:center; font-family:'Barlow Condensed',sans-serif; color:var(--text);
+    }
+    .standings-table td.team-name-cell {
+      text-align:left; font-family:'Bebas Neue',sans-serif; font-size:17px; letter-spacing:2px;
+    }
+    .standings-table td.rank-col {
+      font-family:'Bebas Neue',sans-serif; font-size:17px; color:var(--muted); width:32px;
+    }
+    .standings-table tr:nth-child(1) td.rank-col { color:var(--accent); }
+    .standings-table tr:nth-child(1) td { color:#fff; }
+    .standings-table tr:hover td { background:#141414; }
+    .diff-pos { color:#00e676; } .diff-neg { color:var(--red); }
+    .streak-badge { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; padding:2px 7px; border-radius:3px; }
+    .streak-w { background:rgba(0,230,118,.12); color:#00e676; }
+    .streak-l { background:rgba(255,51,51,.12); color:var(--red); }
+
+    /* ── History list ────────────────────── */
+    .games-list { display:flex; flex-direction:column; gap:10px; }
+    .game-card {
+      background:var(--panel2); border:1px solid var(--divider);
+      border-radius:6px; overflow:hidden;
+    }
+    .game-card-top {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:7px 14px; background:var(--panel); border-bottom:1px solid var(--divider);
+    }
+    .game-date   { font-size:11px; letter-spacing:1px; color:var(--muted); }
+    .game-league { font-size:11px; letter-spacing:2px; color:var(--accent); text-transform:uppercase; }
+    .game-result {
+      display:flex; align-items:center; justify-content:center;
+      gap:12px; padding:12px 20px;
+    }
+    .game-team { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:3px; flex:1; color:var(--muted); }
+    .game-team.winner { color:var(--text); }
+    .game-team.right  { text-align:right; }
+    .game-pts  { font-family:'Bebas Neue',sans-serif; font-size:40px; line-height:1; color:var(--muted); }
+    .game-pts.winner { color:var(--accent); }
+    .game-sep  { color:#2a2a2a; font-size:20px; }
+
+    .boxscore-btn {
+      width:100%; font-family:'Barlow Condensed',sans-serif; font-size:11px;
+      letter-spacing:2px; text-transform:uppercase; background:none;
+      border:none; border-top:1px solid var(--divider); color:var(--muted);
+      padding:8px; cursor:pointer; transition:color .15s;
+    }
+    .boxscore-btn:hover { color:var(--text); }
+    .bs-section { display:none; padding:0 12px 12px; }
+    .bs-team-name {
+      font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:3px; padding:10px 4px 4px;
+    }
+    .bs-team-name.home { color:var(--home-color); }
+    .bs-team-name.away { color:var(--away-color); }
+
+    /* ── Empty states ────────────────────── */
+    .empty-state {
+      text-align:center; padding:50px 20px;
+      color:var(--muted); font-size:13px; letter-spacing:1px; line-height:2;
+    }
+    .empty-state a { color:var(--accent); text-decoration:none; }
+
+    /* ── Mobile ──────────────────────────── */
+    @media (max-width:600px) {
+      .page-header  { padding:8px 14px; }
+      .page-title   { font-size:18px; }
+      .section      { padding:14px 10px; }
+      .leaders-grid { grid-template-columns:repeat(3,1fr); gap:7px; }
+      .leader-value { font-size:28px; }
+      .leader-name  { font-size:15px; }
+      .box-table    { font-size:12px; }
+      .box-table td, .box-table th { padding:7px 6px; }
+      .game-pts  { font-size:32px; }
+      .game-team { font-size:16px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js"></script>
+</head>
+<body>
+<script>(async()=>{ const s=await requireAuth(); if(!s) return; })();</script>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title" id="statsLeagueName">&#x2B21; Hoops</div>
+      <div class="page-sub">Stats &amp; Standings</div>
+    </div>
+    <a class="admin-link" href="index.html">&#9881; Admin</a>
+  </div>
+
+  <div class="section-tabs">
+    <button class="stab active" data-sec="leaders"   onclick="showSection('leaders')">&#127942; Leaders</button>
+    <button class="stab"        data-sec="boxscore"  onclick="showSection('boxscore')">&#128202; Box Score</button>
+    <button class="stab"        data-sec="standings" onclick="showSection('standings')">&#127936; Standings</button>
+    <button class="stab"        data-sec="history"   onclick="showSection('history')">&#128196; History</button>
+  </div>
+
+  <div class="content">
+
+    <!-- LEADERS -->
+    <div class="section active" id="sec-leaders">
+      <div class="section-heading">Game Leaders <span class="game-badge">Current Game</span></div>
+      <div class="leaders-grid" id="leadersGrid"></div>
+      <div class="section-heading" style="margin-top:8px;">Season Leaders</div>
+      <div class="leaders-grid" id="seasonLeadersGrid"></div>
+    </div>
+
+    <!-- BOX SCORE (current game) -->
+    <div class="section" id="sec-boxscore">
+      <div class="section-heading">Box Score <span class="game-badge">Current Game</span></div>
+      <div id="boxScoreContent"></div>
+    </div>
+
+    <!-- STANDINGS -->
+    <div class="section" id="sec-standings">
+      <div class="section-heading">League Standings</div>
+      <div class="standings-table-wrap">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th class="rank-col">#</th>
+              <th class="team-name-cell">Team</th>
+              <th>W</th><th>L</th><th>Win%</th><th>GB</th><th>PF</th><th>PA</th><th>+/-</th><th>Streak</th>
+            </tr>
+          </thead>
+          <tbody id="statsStandingsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="section" id="sec-history">
+      <div class="section-heading">Game History</div>
+      <div class="games-list" id="gamesHistoryList"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Section tabs ───────────────────────
+    function showSection(sec) {
+      document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
+      document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === 'sec-' + sec));
+    }
+
+    // ── DB helpers ─────────────────────────
+    const DB = { get: k => { try { return JSON.parse(localStorage.getItem('pro_' + k)); } catch { return null; } } };
+
+    // ── Theme sync ─────────────────────────
+    function applyTheme(t) {
+      if (!t) return;
+      const r = document.documentElement.style;
+      r.setProperty('--accent',     t.accent     || '#FF5E1A');
+      r.setProperty('--home-color', t.homeColor  || '#FF5E1A');
+      r.setProperty('--away-color', t.awayColor  || '#00C2FF');
+    }
+
+    // ── Helpers ────────────────────────────
+    function blankStats() { return { pts:0, reb:0, ast:0, stl:0, blk:0, to:0, pf:0 }; }
+
+    function buildBoxTable(players, side) {
+      if (!players || players.length === 0) return '<div class="empty-state">No player data</div>';
+      const rows = players.map(p => {
+        const s = p.stats || blankStats();
+        return `<tr>
+          <td class="num-col">#${p.num}</td>
+          <td class="name-col">${p.name}</td>
+          <td>${p.pos}</td>
+          <td class="pts-col">${s.pts}</td>
+          <td>${s.reb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.to}</td><td>${s.pf}</td>
+        </tr>`;
+      }).join('');
+      const t = players.reduce((acc,p) => {
+        const s = p.stats || blankStats();
+        Object.keys(acc).forEach(k => acc[k] += s[k] || 0);
+        return acc;
+      }, { pts:0,reb:0,ast:0,stl:0,blk:0,to:0,pf:0 });
+      return `<div class="box-table-wrap">
+        <table class="box-table">
+          <thead><tr><th>#</th><th class="name-col">Player</th><th>Pos</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>TO</th><th>PF</th></tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr><td colspan="3">Total</td><td class="pts-col">${t.pts}</td><td>${t.reb}</td><td>${t.ast}</td><td>${t.stl}</td><td>${t.blk}</td><td>${t.to}</td><td>${t.pf}</td></tr></tfoot>
+        </table>
+      </div>`;
+    }
+
+    // ── Render leaders ─────────────────────
+    function renderLeaders(roster, stats, targetId, homeName, awayName) {
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const STATS = [
+        { key:'pts', label:'Points',   cls:'pts' },
+        { key:'reb', label:'Rebounds', cls:'reb' },
+        { key:'ast', label:'Assists',  cls:'ast' },
+        { key:'stl', label:'Steals',   cls:'stl' },
+        { key:'blk', label:'Blocks',   cls:'blk' },
+      ];
+      let allPlayers = [];
+      ['home','away'].forEach(side => {
+        (roster[side] || []).forEach(p => {
+          const s = (stats[side] || {})[p.id] || blankStats();
+          allPlayers.push({ ...p, stats: s, side, teamName: side === 'home' ? homeName : awayName });
+        });
+      });
+      if (allPlayers.length === 0) {
+        el.innerHTML = '<div class="empty-state">No player data. Add players in the Admin &rarr; Roster tab.</div>';
+        return;
+      }
+      el.innerHTML = STATS.map(stat => {
+        const best = allPlayers.reduce((a,b) => (a.stats[stat.key]||0) >= (b.stats[stat.key]||0) ? a : b);
+        const val = best.stats[stat.key] || 0;
+        return `<div class="leader-card">
+          <div class="leader-stat-name">${stat.label}</div>
+          <div class="leader-name">#${best.num} ${best.name}</div>
+          <div class="leader-team">${best.teamName}</div>
+          <div class="leader-value ${stat.cls}">${val}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Render season leaders from history ─
+    function renderSeasonLeaders(history) {
+      const el = document.getElementById('seasonLeadersGrid');
+      if (!el) return;
+      if (!history || history.length === 0) {
+        el.innerHTML = '<div class="empty-state">No saved games yet.</div>'; return;
+      }
+      // Aggregate from all games
+      const totals = {};
+      history.forEach(g => {
+        ['home','away'].forEach(side => {
+          const teamName = side === 'home' ? g.homeName : g.awayName;
+          (g.boxScore?.[side] || []).forEach(p => {
+            const key = p.name + '|' + teamName;
+            if (!totals[key]) totals[key] = { name:p.name, num:p.num, teamName, pos:p.pos, pts:0,reb:0,ast:0,stl:0,blk:0,to:0,pf:0, games:0 };
+            const s = p.stats || blankStats();
+            totals[key].pts += s.pts||0; totals[key].reb += s.reb||0; totals[key].ast += s.ast||0;
+            totals[key].stl += s.stl||0; totals[key].blk += s.blk||0; totals[key].games++;
+          });
+        });
+      });
+      const all = Object.values(totals);
+      if (all.length === 0) { el.innerHTML = '<div class="empty-state">No player data in history.</div>'; return; }
+      const STATS = [
+        { key:'pts', label:'Season PTS', cls:'pts' },
+        { key:'reb', label:'Season REB', cls:'reb' },
+        { key:'ast', label:'Season AST', cls:'ast' },
+        { key:'stl', label:'Season STL', cls:'stl' },
+        { key:'blk', label:'Season BLK', cls:'blk' },
+      ];
+      el.innerHTML = STATS.map(stat => {
+        const best = all.reduce((a,b) => (a[stat.key]||0) >= (b[stat.key]||0) ? a : b);
+        return `<div class="leader-card">
+          <div class="leader-stat-name">${stat.label}</div>
+          <div class="leader-name">#${best.num} ${best.name}</div>
+          <div class="leader-team">${best.teamName} · ${best.games}G</div>
+          <div class="leader-value ${stat.cls}">${best[stat.key]}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Render box score ───────────────────
+    function renderBoxScore(roster, stats, homeName, awayName) {
+      const el = document.getElementById('boxScoreContent');
+      if (!el) return;
+      const homePlayers = (roster.home||[]).map(p => ({ ...p, stats: (stats.home||{})[p.id] || blankStats() }));
+      const awayPlayers = (roster.away||[]).map(p => ({ ...p, stats: (stats.away||{})[p.id] || blankStats() }));
+      el.innerHTML =
+        `<div class="bs-team-name home">${homeName}</div>` + buildBoxTable(homePlayers,'home') +
+        `<div class="bs-team-name away" style="margin-top:16px">${awayName}</div>` + buildBoxTable(awayPlayers,'away');
+    }
+
+    // ── Render standings ───────────────────
+    function renderStandings(standings) {
+      const tbody = document.getElementById('statsStandingsBody');
+      if (!tbody) return;
+      if (!standings || standings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No games saved yet.</td></tr>'; return;
+      }
+      const leader = standings[0];
+      tbody.innerHTML = standings.map((t,i) => {
+        const gp = t.w + t.l;
+        const wp = gp ? (t.w/gp*100).toFixed(1) : '0.0';
+        const diff = t.pf - t.pa;
+        const gb = i===0 ? '—' : (((leader.w-leader.l)-(t.w-t.l))/2).toFixed(1);
+        const sc = t.streakType==='W'?'streak-w':'streak-l';
+        return `<tr>
+          <td class="rank-col">${i+1}</td>
+          <td class="team-name-cell">${t.name}</td>
+          <td>${t.w}</td><td>${t.l}</td>
+          <td>${wp}%</td><td>${gb}</td>
+          <td>${t.pf}</td><td>${t.pa}</td>
+          <td class="${diff>=0?'diff-pos':'diff-neg'}">${diff>=0?'+':''}${diff}</td>
+          <td><span class="streak-badge ${sc}">${t.streak}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Render history ─────────────────────
+    function renderHistory(history) {
+      const el = document.getElementById('gamesHistoryList');
+      if (!el) return;
+      if (!history || history.length === 0) {
+        el.innerHTML = '<div class="empty-state">No saved games yet.<br><a href="index.html">Go to Admin</a> to record a game.</div>'; return;
+      }
+      el.innerHTML = history.map(g => {
+        const hw = g.homeScore > g.awayScore;
+        const homePlayers = (g.boxScore?.home||[]);
+        const awayPlayers = (g.boxScore?.away||[]);
+        return `<div class="game-card">
+          <div class="game-card-top">
+            <span class="game-date">${g.date}</span>
+            <span class="game-league">${g.leagueName||'Game'}</span>
+          </div>
+          <div class="game-result">
+            <span class="game-team ${hw?'winner':''}">${g.homeName}</span>
+            <span class="game-pts ${hw?'winner':''}">${g.homeScore}</span>
+            <span class="game-sep">—</span>
+            <span class="game-pts ${!hw?'winner':''}">${g.awayScore}</span>
+            <span class="game-team right ${!hw?'winner':''}">${g.awayName}</span>
+          </div>
+          <button class="boxscore-btn" onclick="toggleHistoryBox('${g.id}')">&#128196; View Box Score</button>
+          <div class="bs-section" id="hbs-${g.id}">
+            <div class="bs-team-name home">${g.homeName}</div>
+            ${buildBoxTable(homePlayers,'home')}
+            <div class="bs-team-name away" style="margin-top:12px">${g.awayName}</div>
+            ${buildBoxTable(awayPlayers,'away')}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function toggleHistoryBox(id) {
+      const el = document.getElementById('hbs-' + id);
+      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // ── Main refresh ───────────────────────
+    function refresh() {
+      const sbRaw = localStorage.getItem('scoreboard');
+      let sb = null;
+      try { sb = sbRaw ? JSON.parse(sbRaw) : null; } catch {}
+
+      if (sb?.theme) applyTheme(sb.theme);
+      if (sb?.leagueName) document.getElementById('statsLeagueName').textContent = '\u2B21 ' + sb.leagueName;
+
+      const roster    = DB.get('roster')    || { home:[], away:[] };
+      const stats     = DB.get('stats')     || { home:{}, away:{} };
+      const standings = DB.get('standings') || [];
+      const history   = DB.get('history')   || [];
+
+      const homeName = sb?.homeName || (roster.home.length ? 'HOME' : 'HOME');
+      const awayName = sb?.awayName || (roster.away.length ? 'AWAY' : 'AWAY');
+
+      renderLeaders(roster, stats, 'leadersGrid', homeName, awayName);
+      renderSeasonLeaders(history);
+      renderBoxScore(roster, stats, homeName, awayName);
+      renderStandings(standings);
+      renderHistory(history);
+    }
+
+    refresh();
+    // Auto-refresh every 5s to pick up live stat changes
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>
