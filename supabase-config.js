@@ -5,7 +5,7 @@
    ===================================================== */
 
 const SUPABASE_URL  = 'https://bhamcufaijhcdczmbduw.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_MvtPP0vfG0xT_XZJG7mg8w_6Jh7WIML';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoYW1jdWZhaWpoY2Rjem1iZHV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxODYzNjMsImV4cCI6MjA4Nzc2MjM2M30.5P9rpjJTY_cIyk0K7edeL0um4RiUTY49CLLf1W41Eo0';
 
 // Load the Supabase JS client (CDN)
 // This is already included via <script> tags in each HTML file.
