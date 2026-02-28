@@ -1,0 +1,241 @@
+/* =====================================================
+   HOOPS PRO — pro.css
+   Roster · Stats · Standings · History tabs
+   ===================================================== */
+
+/* ── Two-column panel layout ────────────────────────── */
+.pro-two-col { display: grid; grid-template-columns: 1fr 1fr; flex: 1; }
+.pro-col { display: flex; flex-direction: column; border-right: 1px solid var(--divider); }
+.pro-col:last-child { border-right: none; }
+
+.pro-col-header {
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 4px;
+  padding: 10px 14px 8px;
+  border-bottom: 2px solid var(--divider);
+  position: sticky; top: 0; z-index: 5; background: var(--panel);
+}
+.pro-col-header.home-accent { border-bottom-color: var(--home-color); color: var(--home-color); }
+.pro-col-header.away-accent { border-bottom-color: var(--away-color); color: var(--away-color); }
+
+
+/* ═══════════════════════════════════════════════════════
+   ROSTER TAB
+   ═══════════════════════════════════════════════════════ */
+.add-player-form {
+  display: flex; gap: 4px; padding: 9px;
+  border-bottom: 1px solid #1a1a1a; background: #0c0c0c; flex-wrap: wrap;
+}
+.player-num-input {
+  width: 40px; font-family: 'Bebas Neue', sans-serif; font-size: 15px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--text);
+  padding: 5px 4px; border-radius: 3px; text-align: center; outline: none;
+  min-height: 36px; -webkit-appearance: none;
+}
+.player-name-input {
+  flex: 1; min-width: 70px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--text);
+  padding: 5px 8px; border-radius: 3px; outline: none; min-height: 36px; letter-spacing: 1px;
+}
+.player-pos-select {
+  width: 46px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--text);
+  padding: 4px; border-radius: 3px; outline: none; min-height: 36px;
+}
+.player-num-input:focus,
+.player-name-input:focus,
+.player-pos-select:focus { border-color: var(--accent); }
+
+.add-player-btn {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1px;
+  background: var(--accent); border: none; color: #000;
+  padding: 5px 9px; border-radius: 3px; cursor: pointer; min-height: 36px;
+  transition: opacity .2s;
+}
+.add-player-btn:hover { opacity: .85; }
+
+.roster-list { flex: 1; overflow-y: auto; }
+.roster-row {
+  display: flex; align-items: center; gap: 7px; padding: 9px 12px;
+  border-bottom: 1px solid #1a1a1a; transition: background .15s;
+}
+.roster-row:hover { background: #1a1a1a; }
+.roster-num  { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--muted); min-width: 26px; text-align: right; }
+.roster-pos  { font-size: 9px; letter-spacing: 2px; color: var(--muted); background: #222; padding: 2px 4px; border-radius: 2px; min-width: 24px; text-align: center; }
+.roster-name { flex: 1; font-size: 13px; letter-spacing: 1px; }
+.roster-del  {
+  background: none; border: none; color: #444; cursor: pointer;
+  font-size: 11px; padding: 4px 6px; border-radius: 2px; transition: all .15s;
+  min-width: 28px; min-height: 28px;
+}
+.roster-del:hover { color: var(--red); background: rgba(255,51,51,.1); }
+.roster-empty { padding: 20px 14px; font-size: 11px; color: var(--muted); letter-spacing: 1px; text-align: center; }
+
+
+/* ═══════════════════════════════════════════════════════
+   STATS TAB
+   ═══════════════════════════════════════════════════════ */
+.stat-btn-panel {
+  background: #080808; border-bottom: 2px solid var(--accent);
+  padding: 9px 12px; display: none; flex-direction: column; gap: 7px;
+  flex-shrink: 0; position: sticky; top: 0; z-index: 10;
+}
+.stat-btn-panel.visible { display: flex; }
+.stat-btn-panel.flash-stat { animation: statFlash .18s ease; }
+@keyframes statFlash { 0%{background:#1a1200} 100%{background:#080808} }
+
+.stat-player-label {
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 3px; color: var(--accent);
+}
+.stat-btns-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+.stat-btn {
+  font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 1px;
+  border: 1.5px solid #333; background: var(--panel2); color: var(--text);
+  padding: 9px 2px; border-radius: 4px; cursor: pointer; transition: all .15s; min-height: 42px;
+}
+.stat-btn:active { transform: scale(.93); }
+.stat-btn:hover  { filter: brightness(1.3); background: rgba(255,255,255,.04); }
+.stat-btn.pts  { border-color: var(--home-color); color: var(--home-color); }
+.stat-btn.reb  { border-color: var(--away-color); color: var(--away-color); }
+.stat-btn.ast  { border-color: var(--yellow);     color: var(--yellow); }
+.stat-btn.stl  { border-color: var(--green);      color: var(--green); }
+.stat-btn.blk  { border-color: #b06aff;           color: #b06aff; }
+.stat-btn.to   { border-color: var(--red);        color: var(--red); }
+.stat-btn.pf   { border-color: #FF9900;           color: #FF9900; }
+.stat-btn.undo { border-color: #444; color: #777; font-size: 10px; }
+
+.stats-list { overflow-y: auto; }
+.stats-player-row {
+  display: flex; flex-direction: column; gap: 4px; padding: 9px 12px;
+  border-bottom: 1px solid #1a1a1a; cursor: pointer; transition: background .15s;
+}
+.stats-player-row:hover    { background: #181818; }
+.stats-player-row.selected { background: rgba(255,94,26,.08); border-left: 3px solid var(--accent); }
+
+.stats-player-info { display: flex; align-items: center; gap: 7px; }
+.stats-num  { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--muted); min-width: 24px; }
+.stats-name { font-size: 13px; letter-spacing: 1px; flex: 1; }
+.stats-pos  { font-size: 9px; letter-spacing: 1px; color: var(--muted); background: #222; padding: 1px 4px; border-radius: 2px; }
+.stats-nums { display: flex; gap: 3px; flex-wrap: wrap; }
+
+.stat-chip {
+  font-family: 'Bebas Neue', sans-serif; font-size: 14px;
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 28px; padding: 2px 4px; border-radius: 3px;
+  background: #151515; line-height: 1;
+}
+.stat-chip em {
+  font-style: normal; font-family: 'Barlow Condensed', sans-serif;
+  font-size: 7px; letter-spacing: 1px; color: var(--muted); margin-top: 2px;
+}
+.stat-chip.pts { color: var(--home-color); }
+.stat-chip.reb { color: var(--away-color); }
+.stat-chip.ast { color: var(--yellow); }
+.stat-chip.stl { color: var(--green); }
+.stat-chip.blk { color: #b06aff; }
+.stat-chip.to  { color: var(--red); }
+.stat-chip.pf  { color: #FF9900; }
+
+.danger-btn {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; background: none; border: 1px solid #333; color: #666;
+  padding: 6px 14px; cursor: pointer; border-radius: 3px; transition: all .2s;
+}
+.danger-btn:hover { border-color: var(--red); color: var(--red); }
+.danger-btn.sm { font-size: 10px; padding: 4px 10px; }
+
+
+/* ═══════════════════════════════════════════════════════
+   STANDINGS TAB
+   ═══════════════════════════════════════════════════════ */
+.standings-wrap { flex: 1; display: flex; flex-direction: column; }
+.standings-toolbar, .history-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px 8px; border-bottom: 1px solid #1a1a1a;
+}
+.standings-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; color: var(--accent); }
+.standings-table-wrap { overflow-x: auto; flex: 1; }
+.standings-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 380px; }
+.standings-table thead th {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 9px; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--muted);
+  padding: 9px 10px 7px; border-bottom: 1px solid #222;
+  text-align: center; white-space: nowrap;
+  position: sticky; top: 0; background: var(--panel); z-index: 2;
+}
+.standings-table thead th.team-name-cell { text-align: left; }
+.standings-table td {
+  padding: 10px; border-bottom: 1px solid #1a1a1a;
+  text-align: center; font-family: 'Barlow Condensed', sans-serif; color: var(--text);
+}
+.standings-table td.team-name-cell {
+  text-align: left; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px;
+}
+.standings-table td.rank { font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--muted); width: 26px; }
+.standings-table tr.standings-leader td { color: #fff; }
+.standings-table tr.standings-leader td.rank { color: var(--accent); }
+.standings-table tr:hover td { background: #181818; }
+.diff-pos { color: var(--green); }
+.diff-neg { color: var(--red); }
+.standings-empty { padding: 30px; color: var(--muted); font-size: 12px; letter-spacing: 1px; text-align: center; }
+.streak-badge { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1px; padding: 2px 6px; border-radius: 3px; }
+.streak-w { background: rgba(0,230,118,.14); color: var(--green); }
+.streak-l { background: rgba(255,51,51,.12); color: var(--red); }
+
+
+/* ═══════════════════════════════════════════════════════
+   HISTORY TAB
+   ═══════════════════════════════════════════════════════ */
+.history-list { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.history-empty { padding: 30px; color: var(--muted); font-size: 12px; letter-spacing: 1px; text-align: center; }
+
+.history-card { background: #0f0f0f; border: 1px solid #222; border-radius: 6px; overflow: hidden; }
+.history-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; border-bottom: 1px solid #1a1a1a; background: #0a0a0a;
+}
+.history-date   { font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+.history-league { font-size: 10px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
+.history-del    { background: none; border: none; color: #444; cursor: pointer; font-size: 11px; padding: 4px 6px; border-radius: 2px; transition: color .15s; }
+.history-del:hover { color: var(--red); }
+
+.history-score-row { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; }
+.history-team  { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 3px; color: var(--muted); flex: 1; }
+.history-team:last-child { text-align: right; }
+.history-team.winner { color: var(--text); }
+.history-score { font-family: 'Bebas Neue', sans-serif; font-size: 34px; line-height: 1; color: var(--muted); }
+.history-score.winner { color: var(--accent); }
+.history-vs    { color: #333; font-size: 16px; }
+
+.boxscore-toggle {
+  width: 100%; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; background: none; border: none; border-top: 1px solid #1a1a1a;
+  color: var(--muted); padding: 7px; cursor: pointer; transition: color .15s;
+}
+.boxscore-toggle:hover { color: var(--text); }
+
+.boxscore-wrap { padding: 0 10px 10px; }
+.bs-team-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 3px; padding: 8px 4px 4px; }
+.bs-team-label.home { color: var(--home-color); }
+.bs-team-label.away { color: var(--away-color); }
+.bs-table-wrap { overflow-x: auto; }
+.bs-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 300px; }
+.bs-table th { font-size: 8px; letter-spacing: 2px; color: var(--muted); padding: 4px 5px; border-bottom: 1px solid #222; text-align: center; }
+.bs-table td { padding: 5px; border-bottom: 1px solid #1a1a1a; text-align: center; color: #bbb; font-family: 'Barlow Condensed', sans-serif; }
+.bs-table td.bs-name { text-align: left; color: var(--text); }
+.bs-table td.bs-pts  { color: var(--accent); font-weight: 700; }
+.bs-table tfoot td   { color: var(--text); font-weight: 600; border-top: 1px solid #333; border-bottom: none; }
+.bs-table tfoot td.bs-pts { color: var(--accent); }
+.bs-empty { padding: 10px; font-size: 11px; color: var(--muted); }
+
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 700px) {
+  .stat-btns-grid { grid-template-columns: repeat(4, 1fr); }
+  .stat-btn { font-size: 11px; min-height: 44px; }
+  .standings-table { font-size: 12px; }
+  .standings-table td, .standings-table th { padding: 8px 7px; }
+  .player-name-input { min-width: 60px; font-size: 13px; }
+  .player-num-input  { width: 36px; }
+  .history-score { font-size: 28px; }
+  .history-team  { font-size: 14px; }
+}

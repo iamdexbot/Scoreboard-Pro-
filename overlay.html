@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stream Overlay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:     #FF5E1A;
+      --yellow:     #FFD600;
+      --red:        #FF3333;
+      --dark:       #0A0A0A;
+      --panel:      #111111;
+      --panel2:     #191919;
+      --divider:    #252525;
+      --text:       #F5F0E8;
+      --muted:      #555;
+      --home-color: #FF5E1A;
+      --away-color: #00C2FF;
+    }
+
+    /* Transparent background so OBS can chroma-key or use window capture */
+    body {
+      background: transparent;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      min-height: 100vh;
+      font-family: 'Barlow Condensed', sans-serif;
+      color: var(--text);
+      padding: 16px;
+    }
+
+    /* ── Main overlay box ──────────────────── */
+    .overlay-box {
+      width: 360px;
+      background: rgba(10, 10, 10, 0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+      transition: background 0.5s;
+    }
+
+    /* ── Header bar ────────────────────────── */
+    .ov-header {
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 12px;
+      transition: background 0.5s;
+    }
+    .ov-league {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: #000;
+    }
+    .ov-period {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #000;
+      opacity: 0.8;
+    }
+    .ov-clock {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: #000;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* ── Teams section ─────────────────────── */
+    .ov-teams {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Each team row */
+    .ov-team {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--divider);
+      transition: background 0.3s;
+    }
+    .ov-team:last-child { border-bottom: none; }
+    .ov-team.has-ball { background: rgba(255,255,255,0.03); }
+
+    /* Logo */
+    .ov-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      border-radius: 4px;
+      display: none;
+    }
+    .ov-logo.visible { display: block; }
+    .ov-logo-placeholder {
+      width: 36px;
+      height: 36px;
+      border-radius: 4px;
+      background: var(--panel2);
+      border: 1px solid var(--divider);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    /* Team info: name + stats row */
+    .ov-team-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .ov-team-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ov-team-name.home { color: var(--home-color); }
+    .ov-team-name.away { color: var(--away-color); }
+
+    .ball-indicator {
+      font-size: 9px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      color: var(--yellow);
+    }
+    .ball-indicator.visible { opacity: 1; }
+
+    /* Stats row: fouls + timeouts */
+    .ov-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ov-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ov-stat-label {
+      font-size: 8px;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Foul & timeout pips */
+    .ov-pips {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+    .ov-pip {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      border: 1px solid #333;
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .ov-pip.active.home  { background: var(--home-color); border-color: var(--home-color); }
+    .ov-pip.active.away  { background: var(--away-color); border-color: var(--away-color); }
+
+    .ov-to-pip {
+      width: 7px;
+      height: 7px;
+      border-radius: 1px;
+      border: 1px solid #333;
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .ov-to-pip.active.home { background: var(--home-color); border-color: var(--home-color); }
+    .ov-to-pip.active.away { background: var(--away-color); border-color: var(--away-color); }
+
+    .penalty-tag {
+      font-size: 8px;
+      letter-spacing: 1px;
+      color: var(--red);
+      text-shadow: 0 0 6px rgba(255,51,51,0.6);
+      animation: pen-pulse 1s ease-in-out infinite alternate;
+      display: none;
+    }
+    .penalty-tag.visible { display: block; }
+    @keyframes pen-pulse {
+      from { opacity: 0.7; }
+      to   { opacity: 1; }
+    }
+
+    /* Score — right column, big */
+    .ov-score {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      line-height: 1;
+      letter-spacing: -1px;
+      text-align: right;
+      transition: transform 0.15s;
+    }
+    .ov-score.home { color: var(--home-color); }
+    .ov-score.away { color: var(--away-color); }
+    .ov-score.bump { animation: bump 0.25s ease; }
+    @keyframes bump { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+
+    /* ── Bottom bar: shot clock ────────────── */
+    .ov-footer {
+      background: var(--panel2);
+      border-top: 1px solid var(--divider);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 12px;
+    }
+    .ov-footer-label {
+      font-size: 8px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .ov-shot-clock {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: var(--red);
+      letter-spacing: 1px;
+      min-width: 30px;
+      text-align: center;
+      transition: color 0.3s;
+    }
+    .ov-shot-clock.warning  { color: #FF9900; }
+    .ov-shot-clock.critical { color: var(--red); animation: sc-flash 0.4s ease-in-out infinite alternate; }
+    .ov-shot-clock.running  { text-shadow: 0 0 12px rgba(255,51,51,0.6); }
+    @keyframes sc-flash { from{opacity:1} to{opacity:0.35} }
+
+    .ov-possession-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--yellow);
+      opacity: 0;
+      transition: opacity 0.3s;
+      box-shadow: 0 0 8px var(--yellow);
+    }
+    .ov-possession-dot.visible { opacity: 1; }
+
+    /* ── Help tip (how to use for streaming) ─ */
+    .overlay-tip {
+      position: fixed;
+      bottom: 16px; left: 16px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: #333;
+      text-transform: uppercase;
+      line-height: 1.6;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Flash */
+    .flash {
+      position: fixed; inset: 0;
+      background: var(--yellow);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .flash.active { animation: flashAnim 0.5s ease; }
+    @keyframes flashAnim { 0%{opacity:0.25} 100%{opacity:0} }
+  </style>
+</head>
+<body>
+
+  <div class="flash" id="flash"></div>
+
+  <div class="overlay-box">
+
+    <!-- Header: League · Period · Clock -->
+    <div class="ov-header">
+      <span class="ov-league" id="ovLeague">&#x2B21; HOOPS</span>
+      <span class="ov-period" id="ovPeriod">Q1</span>
+      <span class="ov-clock" id="ovClock">12:00.00</span>
+    </div>
+
+    <!-- Teams -->
+    <div class="ov-teams">
+
+      <!-- Home -->
+      <div class="ov-team" id="ovHomeRow">
+        <div class="ov-logo-wrap">
+          <img  class="ov-logo" id="ovHomeLogo" src="" alt="" />
+          <div  class="ov-logo-placeholder" id="ovHomeLogoPlaceholder">HOME</div>
+        </div>
+        <div class="ov-team-info">
+          <div class="ov-team-name home">
+            <span id="ovHomeName">HOME</span>
+            <span class="ball-indicator" id="ovHomeBall">&#9654;</span>
+          </div>
+          <div class="ov-stats">
+            <div class="ov-stat">
+              <span class="ov-stat-label">F</span>
+              <div class="ov-pips" id="ovHomeFoulPips"></div>
+              <span class="penalty-tag" id="ovHomePenalty">PEN</span>
+            </div>
+            <div class="ov-stat">
+              <span class="ov-stat-label">TO</span>
+              <div class="ov-pips" id="ovHomeTopips"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ov-score home" id="ovHomeScore">0</div>
+      </div>
+
+      <!-- Away -->
+      <div class="ov-team" id="ovAwayRow">
+        <div class="ov-logo-wrap">
+          <img  class="ov-logo" id="ovAwayLogo" src="" alt="" />
+          <div  class="ov-logo-placeholder" id="ovAwayLogoPlaceholder">AWAY</div>
+        </div>
+        <div class="ov-team-info">
+          <div class="ov-team-name away">
+            <span id="ovAwayName">AWAY</span>
+            <span class="ball-indicator" id="ovAwayBall">&#9654;</span>
+          </div>
+          <div class="ov-stats">
+            <div class="ov-stat">
+              <span class="ov-stat-label">F</span>
+              <div class="ov-pips" id="ovAwayFoulPips"></div>
+              <span class="penalty-tag" id="ovAwayPenalty">PEN</span>
+            </div>
+            <div class="ov-stat">
+              <span class="ov-stat-label">TO</span>
+              <div class="ov-pips" id="ovAwayTopips"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ov-score away" id="ovAwayScore">0</div>
+      </div>
+
+    </div>
+
+    <!-- Footer: shot clock + possession indicator -->
+    <div class="ov-footer">
+      <span class="ov-footer-label">Shot Clock</span>
+      <div class="ov-shot-clock" id="ovShotClock">24</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="ov-footer-label">Poss</span>
+        <div class="ov-possession-dot" id="ovPossDot"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="overlay-tip">
+    Tip: In OBS, use Browser Source or Window Capture.<br>
+    Set chroma key on black, or use Window Capture with<br>
+    "Allow Transparency" enabled for a clean overlay.
+  </div>
+
+  <script>
+    const MAX_FOULS    = 5;
+    let MAX_TIMEOUTS = 5;
+
+    let prevScores = { home: null, away: null };
+    let prevTheme  = null;
+    let prevHomeLogoData = null;
+    let prevAwayLogoData = null;
+
+    function formatClock(cs) {
+      if (cs === null || cs === undefined) return '--:--';
+      const totalSecs = Math.floor(cs / 100);
+      const m  = Math.floor(totalSecs / 60);
+      const s  = totalSecs % 60;
+      const cc = Math.floor(cs % 100);
+      return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + String(cc).padStart(2,'0');
+    }
+
+    function buildFoulPips(id, count, team) {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      for (let i = 0; i < MAX_FOULS; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'ov-pip ' + team;
+        if (count > i) pip.classList.add('active');
+        el.appendChild(pip);
+      }
+    }
+
+    function buildToPips(id, count, team) {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      for (let i = 0; i < MAX_TIMEOUTS; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'ov-to-pip ' + team;
+        if (count > i) pip.classList.add('active');
+        el.appendChild(pip);
+      }
+    }
+
+    function bump(id) {
+      const el = document.getElementById(id);
+      el.classList.remove('bump');
+      void el.offsetWidth;
+      el.classList.add('bump');
+    }
+
+    function setLogo(imgId, placeholderId, dataUrl) {
+      const img = document.getElementById(imgId);
+      const ph  = document.getElementById(placeholderId);
+      if (dataUrl) {
+        img.src = dataUrl;
+        img.classList.add('visible');
+        ph.style.display = 'none';
+      } else {
+        img.src = '';
+        img.classList.remove('visible');
+        ph.style.display = '';
+      }
+    }
+
+    function lighten(hex, amt) {
+      hex = hex.replace('#','');
+      if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+      const r = Math.min(255, parseInt(hex.slice(0,2),16) + amt);
+      const g = Math.min(255, parseInt(hex.slice(2,4),16) + amt);
+      const b = Math.min(255, parseInt(hex.slice(4,6),16) + amt);
+      return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+    }
+
+    function applyTheme(t) {
+      const r = document.documentElement.style;
+      r.setProperty('--accent',     t.accent);
+      r.setProperty('--home-color', t.homeColor);
+      r.setProperty('--away-color', t.awayColor);
+      r.setProperty('--yellow',     t.yellow);
+      r.setProperty('--dark',       t.dark);
+      r.setProperty('--panel',      t.panel);
+      r.setProperty('--panel2',     lighten(t.panel, 10));
+      r.setProperty('--divider',    lighten(t.panel, 20));
+    }
+
+    function refresh() {
+      const raw = localStorage.getItem('scoreboard');
+      if (!raw) return;
+      let s;
+      try { s = JSON.parse(raw); } catch(e) { return; }
+
+      // Theme
+      if (s.theme) {
+        const key = JSON.stringify(s.theme);
+        if (key !== prevTheme) { applyTheme(s.theme); prevTheme = key; }
+      }
+
+      // Logos
+      if (s.homeLogoData !== prevHomeLogoData) {
+        setLogo('ovHomeLogo', 'ovHomeLogoPlaceholder', s.homeLogoData);
+        prevHomeLogoData = s.homeLogoData;
+      }
+      if (s.awayLogoData !== prevAwayLogoData) {
+        setLogo('ovAwayLogo', 'ovAwayLogoPlaceholder', s.awayLogoData);
+        prevAwayLogoData = s.awayLogoData;
+      }
+
+      // League + Period + Clock
+      if (s.leagueName) document.getElementById('ovLeague').textContent = '\u2B21 ' + s.leagueName;
+      document.getElementById('ovPeriod').textContent = s.periodLabel || ('Q' + s.period) || 'Q1';
+      document.getElementById('ovClock').textContent  = formatClock(s.timerCentiseconds);
+
+      // Team names
+      document.getElementById('ovHomeName').textContent = s.homeName || 'HOME';
+      document.getElementById('ovAwayName').textContent = s.awayName || 'AWAY';
+
+      // Scores with bump animation
+      if (prevScores.home !== s.homeScore) {
+        document.getElementById('ovHomeScore').textContent = s.homeScore ?? 0;
+        if (prevScores.home !== null) bump('ovHomeScore');
+        prevScores.home = s.homeScore;
+      }
+      if (prevScores.away !== s.awayScore) {
+        document.getElementById('ovAwayScore').textContent = s.awayScore ?? 0;
+        if (prevScores.away !== null) bump('ovAwayScore');
+        prevScores.away = s.awayScore;
+      }
+
+      // Fouls
+      buildFoulPips('ovHomeFoulPips', s.homeFouls, 'home');
+      buildFoulPips('ovAwayFoulPips', s.awayFouls, 'away');
+      document.getElementById('ovHomePenalty').classList.toggle('visible', s.homeFouls >= MAX_FOULS);
+      document.getElementById('ovAwayPenalty').classList.toggle('visible', s.awayFouls >= MAX_FOULS);
+
+      // Timeouts
+      if (s.maxTimeouts) MAX_TIMEOUTS = s.maxTimeouts;
+      buildToPips('ovHomeTopips', s.homeTimeouts ?? MAX_TIMEOUTS, 'home');
+      buildToPips('ovAwayTopips', s.awayTimeouts ?? MAX_TIMEOUTS, 'away');
+
+      // Possession
+      const isHome = s.possession === 'home';
+      document.getElementById('ovHomeBall').classList.toggle('visible',  isHome);
+      document.getElementById('ovAwayBall').classList.toggle('visible', !isHome);
+      document.getElementById('ovHomeRow').classList.toggle('has-ball',  isHome);
+      document.getElementById('ovAwayRow').classList.toggle('has-ball', !isHome);
+      document.getElementById('ovPossDot').classList.add('visible');
+
+      // Shot clock
+      const sc = document.getElementById('ovShotClock');
+      sc.textContent = s.shotClockSeconds ?? '--';
+      sc.classList.remove('warning','critical','running');
+      if (s.shotClockSeconds <= 5)       sc.classList.add('critical');
+      else if (s.shotClockSeconds <= 10) sc.classList.add('warning');
+      if (s.shotClockRunning)            sc.classList.add('running');
+    }
+
+    refresh();
+    setInterval(refresh, 50);
+  </script>
+</body>
+</html>

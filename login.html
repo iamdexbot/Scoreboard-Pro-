@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Login — Hoops Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accent: #FF5E1A; --dark: #080808; --panel: #111;
+      --panel2: #181818; --divider: #202020; --text: #F0EBE0; --muted: #555;
+    }
+    body {
+      background: var(--dark); min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Barlow Condensed', sans-serif; color: var(--text);
+      padding: 20px; overflow: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255,94,26,.07) 0%, transparent 70%),
+        repeating-linear-gradient(90deg, rgba(255,94,26,.02) 0, transparent 1px, transparent 80px),
+        repeating-linear-gradient(0deg,  rgba(255,94,26,.02) 0, transparent 1px, transparent 80px);
+      pointer-events: none;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; opacity: .12; animation: drift 12s ease-in-out infinite alternate; }
+    .orb-1 { width: 400px; height: 400px; background: var(--accent); top: -100px; right: -100px; }
+    .orb-2 { width: 300px; height: 300px; background: #00C2FF; bottom: -80px; left: -80px; animation-delay: -4s; }
+    @keyframes drift { from{transform:translate(0,0)} to{transform:translate(30px,20px)} }
+
+    .login-card {
+      position: relative; z-index: 10; width: 100%; max-width: 400px;
+      background: var(--panel); border: 1px solid var(--divider); border-radius: 12px;
+      overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .card-top { background: var(--accent); padding: 28px 32px 24px; text-align: center; }
+    .brand-icon { font-size: 36px; margin-bottom: 4px; }
+    .brand-name { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 8px; color: #000; line-height: 1; }
+    .brand-sub  { font-size: 11px; letter-spacing: 4px; color: rgba(0,0,0,.55); text-transform: uppercase; margin-top: 4px; }
+    .card-body  { padding: 28px 32px 32px; }
+    .form-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 4px; color: var(--text); margin-bottom: 20px; text-align: center; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; font-family: 'Barlow Condensed', sans-serif; font-size: 16px; letter-spacing: 1px;
+      background: var(--panel2); border: 1.5px solid var(--divider); color: var(--text);
+      padding: 11px 14px; border-radius: 6px; outline: none; transition: border-color .2s; -webkit-appearance: none;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: #333; }
+    .btn-primary {
+      width: 100%; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px;
+      background: var(--accent); border: none; color: #000;
+      padding: 13px; border-radius: 6px; cursor: pointer; transition: all .2s; margin-top: 4px;
+    }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .divider-line { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+    .divider-line::before, .divider-line::after { content: ''; flex: 1; height: 1px; background: var(--divider); }
+    .divider-line span { font-size: 11px; letter-spacing: 2px; color: var(--muted); }
+    .btn-google {
+      width: 100%; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 2px;
+      background: var(--panel2); border: 1.5px solid var(--divider); color: var(--text);
+      padding: 11px; border-radius: 6px; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn-google:hover { border-color: #4285F4; color: #4285F4; }
+    .google-icon { width: 18px; height: 18px; flex-shrink: 0; }
+    .card-footer { text-align: center; margin-top: 22px; font-size: 13px; letter-spacing: 1px; color: var(--muted); }
+    .card-footer a { color: var(--accent); text-decoration: none; margin-left: 4px; }
+    .card-footer a:hover { opacity: .8; }
+    .error-msg, .success-msg {
+      font-size: 12px; letter-spacing: 1px; padding: 10px 14px; border-radius: 5px;
+      margin-bottom: 14px; display: none;
+    }
+    .error-msg   { background: rgba(255,51,51,.1);  border: 1px solid rgba(255,51,51,.3);  color: #ff6b6b; }
+    .success-msg { background: rgba(0,230,118,.1);  border: 1px solid rgba(0,230,118,.3); color: #00e676; }
+    .error-msg.visible, .success-msg.visible { display: block; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,.3); border-top-color: #000; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="login-card">
+    <div class="card-top">
+      <div class="brand-icon">🏀</div>
+      <div class="brand-name">Hoops Pro</div>
+      <div class="brand-sub">Basketball Management System</div>
+    </div>
+    <div class="card-body">
+      <div class="form-title">Sign In</div>
+      <div class="error-msg"   id="errorMsg"></div>
+      <div class="success-msg" id="successMsg"></div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="emailInput" placeholder="you@email.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <button class="btn-primary" id="loginBtn" onclick="loginEmail()">Sign In</button>
+      <div class="divider-line"><span>or</span></div>
+      <button class="btn-google" onclick="loginGoogle()">
+        <svg class="google-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </button>
+      <div class="card-footer">Don't have an account? <a href="/register">Sign Up</a></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    function showError(msg)   { const e = document.getElementById('errorMsg');   e.textContent = msg; e.classList.add('visible'); }
+    function showSuccess(msg) { const s = document.getElementById('successMsg'); s.textContent = msg; s.classList.add('visible'); }
+    function hideMessages()   {
+      document.getElementById('errorMsg').classList.remove('visible');
+      document.getElementById('successMsg').classList.remove('visible');
+    }
+    function setLoading(on) {
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = on;
+      btn.innerHTML = on ? '<span class="spinner"></span>Signing In...' : 'Sign In';
+    }
+
+    // Redirect if already logged in
+    (async function() {
+      const { data } = await _supa.auth.getSession();
+      if (data.session) window.location.href = '/dashboard';
+    })();
+
+    async function loginEmail() {
+      hideMessages();
+      const email    = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+      if (!email || !password) { showError('Please enter your email and password.'); return; }
+      setLoading(true);
+      const { error } = await _supa.auth.signInWithPassword({ email, password });
+      setLoading(false);
+      if (error) { showError(error.message); return; }
+      window.location.href = '/dashboard';
+    }
+
+    async function loginGoogle() {
+      hideMessages();
+      const redirectTo = window.location.origin + '/dashboard';
+      const { error } = await _supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+      if (error) showError(error.message);
+    }
+
+    document.getElementById('emailInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') document.getElementById('passwordInput').focus();
+    });
+    document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') loginEmail();
+    });
+  </script>
+</body>
+</html>

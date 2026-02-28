@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Hoops Pro — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* =====================================================
+   HOOPS PRO — style.css
+   Base styles: reset, body, shell, scoreboard tab,
+   clocks, fouls, timeouts, footer, modals.
+   ===================================================== */
+
+/* ── Reset ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+input, button, select, div[onclick] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Design tokens ──────────────────────────────────── */
+:root {
+  --accent:      #FF5E1A;
+  --yellow:      #FFD600;
+  --red:         #FF3333;
+  --green:       #00e676;
+  --dark:        #0D0D0D;
+  --panel:       #161616;
+  --panel2:      #1E1E1E;
+  --text:        #F5F0E8;
+  --muted:       #666;
+  --divider:     #252525;
+  --home-color:  #FF5E1A;
+  --away-color:  #00C2FF;
+}
+
+/* ── Body ───────────────────────────────────────────── */
+body {
+  background: var(--dark);
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  color: var(--text);
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,94,26,.025) 0, transparent 1px, transparent 80px),
+    repeating-linear-gradient(0deg,  rgba(255,94,26,.025) 0, transparent 1px, transparent 80px);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── App Shell ──────────────────────────────────────── */
+/* Supports both .shell and .app-shell class names */
+.shell, .app-shell {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 900px;
+  min-height: 100dvh;
+  background: var(--panel);
+  border-left: 1px solid #2a2a2a;
+  border-right: 1px solid #2a2a2a;
+  box-shadow: 0 0 80px rgba(255,94,26,.12), 0 0 200px rgba(0,0,0,.8);
+  display: flex; flex-direction: column;
+}
+
+/* ── App Header ─────────────────────────────────────── */
+.app-header {
+  background: var(--accent);
+  padding: 8px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+  transition: background .4s;
+}
+.app-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; letter-spacing: 4px; color: #000;
+  cursor: pointer; background: none; border: none; padding: 0;
+  white-space: nowrap;
+}
+.app-period {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px; letter-spacing: 2px; color: rgba(0,0,0,.7);
+  white-space: nowrap;
+}
+.dash-back {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  background: rgba(0,0,0,.2); border: 1px solid rgba(0,0,0,.2);
+  color: #000; padding: 5px 10px; border-radius: 3px;
+  text-decoration: none; white-space: nowrap; transition: background .2s;
+}
+.dash-back:hover { background: rgba(0,0,0,.35); }
+
+/* ── Tab Nav ────────────────────────────────────────── */
+.tab-nav {
+  display: flex; background: #080808;
+  border-bottom: 2px solid #1a1a1a;
+  flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
+}
+.tab-nav::-webkit-scrollbar { display: none; }
+.tab-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  background: none; border: none; color: var(--muted);
+  padding: 11px 4px; cursor: pointer; flex: 1;
+  position: relative; transition: color .2s; white-space: nowrap; min-width: 0;
+}
+.tab-btn::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; background: var(--accent);
+  transform: scaleX(0); transition: transform .2s;
+}
+.tab-btn:hover { color: #aaa; }
+.tab-btn.active { color: var(--accent); }
+.tab-btn.active::after { transform: scaleX(1); }
+
+/* ── Tab Panels ─────────────────────────────────────── */
+.tab-panel {
+  display: none; flex-direction: column; flex: 1;
+  overflow-y: auto; padding-bottom: 90px;
+}
+.tab-panel.active { display: flex; }
+
+/* ── Screen flash ───────────────────────────────────── */
+.flash {
+  position: fixed; inset: 0; opacity: 0;
+  pointer-events: none; z-index: 200; background: var(--yellow);
+}
+.flash.active { animation: flashAnim .5s ease; }
+@keyframes flashAnim { 0%{opacity:.3} 100%{opacity:0} }
+
+
+/* ═══════════════════════════════════════════════════════
+   SCOREBOARD TAB
+   ═══════════════════════════════════════════════════════ */
+
+/* Score grid */
+.scores-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--divider); }
+.team { padding: 18px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.team.home { border-right: 1px solid var(--divider); }
+
+.team-name-input {
+  font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 4px;
+  background: transparent; border: none; border-bottom: 1.5px dashed #333;
+  color: var(--text); text-align: center; width: 100%; max-width: 160px;
+  outline: none; padding: 2px 4px; text-transform: uppercase; transition: border-color .2s;
+}
+.team-name-input:focus { border-bottom-color: var(--accent); }
+
+.score-display {
+  font-family: 'Bebas Neue', sans-serif; font-size: 90px;
+  line-height: .9; letter-spacing: -4px; text-align: center;
+}
+.team.home .score-display { color: var(--home-color); }
+.team.away .score-display { color: var(--away-color); }
+.score-display.bump { animation: bump .25s ease; }
+@keyframes bump { 50%{transform:scale(1.1)} }
+
+/* Scoring buttons */
+.score-btns { display: flex; gap: 6px; }
+.btn {
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px;
+  border: 1.5px solid #333; background: var(--panel2); color: var(--text);
+  padding: 10px 0; width: 54px; cursor: pointer; border-radius: 4px; transition: all .15s;
+}
+.btn:active { transform: scale(.93); }
+.btn.pts3:hover { border-color: var(--home-color); color: var(--home-color); }
+.btn.pts2:hover { border-color: var(--accent); color: var(--accent); }
+.btn.pts1:hover { border-color: #aaa; color: #aaa; }
+.btn.minus      { color: var(--muted); }
+.btn.minus:hover{ border-color: var(--red); color: var(--red); }
+
+/* Logo zone */
+.logo-upload-zone {
+  width: 68px; height: 68px; border: 1.5px dashed #333;
+  border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden; transition: border-color .2s;
+}
+.logo-upload-zone:hover { border-color: var(--accent); }
+.logo-preview { width: 100%; height: 100%; object-fit: contain; }
+.logo-placeholder { font-size: 10px; letter-spacing: 1px; color: var(--muted); text-align: center; padding: 4px; }
+.logo-remove {
+  position: absolute; top: 2px; right: 2px;
+  background: rgba(255,51,51,.85); border: none; color: #fff;
+  font-size: 10px; width: 18px; height: 18px; border-radius: 2px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+/* Clocks row */
+.clocks-row {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  border-bottom: 1px solid var(--divider);
+}
+.clock-cell { padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.section-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+
+.timer {
+  font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1px;
+  color: var(--yellow); font-variant-numeric: tabular-nums; white-space: nowrap;
+  text-shadow: 0 0 14px rgba(255,214,0,.3);
+}
+.timer.running { animation: qcPulse 1s ease-in-out infinite alternate; }
+@keyframes qcPulse { to { text-shadow: 0 0 28px rgba(255,214,0,.9); } }
+
+.period-cell {
+  padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border-left: 1px solid var(--divider); border-right: 1px solid var(--divider);
+}
+.period-num { font-family: 'Bebas Neue', sans-serif; font-size: 50px; line-height: 1; color: var(--text); }
+.period-sub { font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+.period-btns { display: flex; gap: 6px; }
+
+.shot-clock {
+  font-family: 'Bebas Neue', sans-serif; font-size: 46px; line-height: 1;
+  color: var(--red); font-variant-numeric: tabular-nums;
+}
+.shot-clock.warning  { color: #FF9900; }
+.shot-clock.critical { animation: scFlash .4s ease-in-out infinite alternate; }
+.shot-clock.running  { text-shadow: 0 0 14px rgba(255,51,51,.6); }
+@keyframes scFlash { to { opacity: .2; } }
+
+/* Icon buttons */
+.timer-controls, .shot-clock-controls { display: flex; gap: 5px; }
+.btn-icon {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--text);
+  width: 40px; height: 40px; border-radius: 4px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .15s; user-select: none;
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+.btn-icon:active { transform: scale(.92); }
+.btn-icon.sm { width: 32px; height: 32px; font-size: 12px; }
+
+/* Fouls */
+.fouls-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--divider); }
+.fouls-panel { padding: 9px 12px; display: flex; align-items: center; gap: 7px; }
+.fouls-panel:first-child { border-right: 1px solid var(--divider); }
+.fouls-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+.fouls-dots { display: flex; gap: 5px; align-items: center; }
+.foul-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1.5px solid #333; cursor: pointer; transition: all .2s; position: relative;
+}
+.foul-dot::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; }
+.foul-dot.active.home { background: var(--home-color); border-color: var(--home-color); box-shadow: 0 0 6px var(--home-color); }
+.foul-dot.active.away { background: var(--away-color); border-color: var(--away-color); box-shadow: 0 0 6px var(--away-color); }
+.fouls-count { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--text); min-width: 28px; text-align: center; }
+.fouls-count.penalty {
+  font-size: 13px; letter-spacing: 1px; color: var(--red);
+  animation: penPulse 1s ease-in-out infinite alternate;
+}
+@keyframes penPulse { to { text-shadow: 0 0 18px var(--red); } }
+
+/* Timeouts */
+.timeouts-row { border-top: 1px solid #1a1a1a; }
+.timeouts-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 14px 0; }
+.timeouts-title { font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+.timeouts-body { display: grid; grid-template-columns: 1fr 1fr; }
+.timeout-panel { padding: 7px 10px; display: flex; align-items: center; gap: 6px; }
+.timeout-panel.home { border-right: 1px solid var(--divider); }
+.timeout-label { font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.timeout-dots { display: flex; gap: 4px; align-items: center; }
+.timeout-dot { width: 11px; height: 11px; border-radius: 2px; border: 1.5px solid #444; transition: all .2s; }
+.timeout-dot.active.home { background: var(--home-color); border-color: var(--home-color); box-shadow: 0 0 5px var(--home-color); }
+.timeout-dot.active.away { background: var(--away-color); border-color: var(--away-color); box-shadow: 0 0 5px var(--away-color); }
+.timeout-count { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--text); min-width: 20px; text-align: center; }
+.timeout-count.zero { color: var(--muted); }
+.timeout-btns { display: flex; gap: 4px; }
+
+/* Save game bar */
+.save-game-bar { padding: 8px 14px; border-top: 1px solid #1a1a1a; }
+.save-game-btn {
+  width: 100%; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px;
+  background: linear-gradient(135deg, rgba(255,94,26,.15), rgba(255,94,26,.04));
+  border: 1.5px solid var(--accent); color: var(--accent);
+  padding: 11px; cursor: pointer; border-radius: 4px; transition: all .2s;
+}
+.save-game-btn:hover { background: var(--accent); color: #000; }
+
+
+/* ═══════════════════════════════════════════════════════
+   STICKY FOOTER
+   ═══════════════════════════════════════════════════════ */
+.footer {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 900px; z-index: 99;
+  background: rgba(12,12,12,.97); border-top: 1px solid #1e1e1e;
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+}
+.possession { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.poss-label { font-size: 8px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.poss-arrow {
+  width: 24px; height: 24px; border-radius: 3px; cursor: pointer;
+  transition: all .2s; display: flex; align-items: center; justify-content: center;
+}
+.poss-arrow.home { background: var(--home-color); }
+.poss-arrow.away { background: var(--away-color); }
+.poss-arrow.inactive { opacity: .18; filter: grayscale(1); }
+.poss-arrow::after    { content: '▶'; font-size: 9px; color: #000; }
+.poss-arrow.away::after { content: '◀'; }
+
+.buzzer-btn {
+  flex: 1; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px;
+  background: var(--panel2); border: 1.5px solid #444; color: var(--text);
+  height: 46px; cursor: pointer; border-radius: 4px; transition: all .2s;
+}
+.buzzer-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+.buzzer-btn:active { transform: scale(.97); }
+
+.footer-right { display: flex; gap: 4px; flex-shrink: 0; }
+.footer-sm-btn {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--muted);
+  padding: 0 8px; height: 38px; cursor: pointer; border-radius: 3px; transition: all .2s;
+}
+.footer-sm-btn:hover         { color: var(--text); border-color: #555; }
+.theme-btn:hover              { border-color: var(--accent); color: var(--accent); }
+.viewer-link-btn:hover        { border-color: var(--away-color); color: var(--away-color); }
+.overlay-link-btn:hover       { border-color: #b06aff; color: #b06aff; }
+.stats-link-btn:hover         { border-color: #b06aff; color: #b06aff; }
+.reset-btn:hover              { border-color: var(--red); color: var(--red); }
+
+
+/* ═══════════════════════════════════════════════════════
+   MODALS
+   ═══════════════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 100;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--panel); border: 1px solid #2a2a2a;
+  border-radius: 12px 12px 0 0;
+  width: 100%; max-width: 520px; max-height: 88dvh; overflow-y: auto;
+  padding: 24px 20px;
+  display: flex; flex-direction: column; gap: 16px;
+  transform: translateY(40px); transition: transform .25s;
+  box-shadow: 0 -8px 40px rgba(0,0,0,.6);
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 4px; color: var(--accent); }
+.modal-body  { display: flex; flex-direction: column; gap: 14px; }
+.modal-close {
+  font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 2px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--muted);
+  padding: 10px; cursor: pointer; border-radius: 4px; transition: all .2s; margin-top: 4px;
+}
+.modal-close:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Minutes options */
+.mins-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.mins-opt {
+  font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--text);
+  width: 56px; height: 56px; cursor: pointer; border-radius: 4px; transition: all .15s;
+}
+.mins-opt:hover, .mins-opt.active { border-color: var(--accent); color: var(--accent); background: rgba(255,94,26,.08); }
+
+/* Timeout options reuse mins-opt styling */
+.to-opt         { border-color: #333; color: var(--text); }
+.to-opt.active  { border-color: var(--accent); color: var(--accent); background: rgba(255,94,26,.08); }
+
+.custom-mins { display: flex; gap: 8px; align-items: center; }
+.custom-mins input {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 16px;
+  background: var(--panel2); border: 1.5px solid #444; color: var(--text);
+  padding: 8px 12px; border-radius: 4px; outline: none; flex: 1;
+}
+.custom-mins input:focus { border-color: var(--accent); }
+
+/* Theme modal */
+.theme-section-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+.theme-presets { display: flex; flex-wrap: wrap; gap: 10px; }
+.theme-swatch { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: transform .15s; }
+.theme-swatch:hover { transform: scale(1.08); }
+.theme-swatch.active .theme-swatch-circle { box-shadow: 0 0 0 2.5px #fff; }
+.theme-swatch-circle { width: 40px; height: 40px; border-radius: 50%; }
+.theme-swatch-name { font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.theme-custom-grid { display: flex; flex-direction: column; gap: 10px; }
+.theme-custom-row { display: flex; align-items: center; justify-content: space-between; }
+.theme-custom-row label { font-size: 13px; letter-spacing: 1px; color: var(--muted); }
+.theme-custom-row input[type=color] { width: 40px; height: 32px; border: none; border-radius: 4px; cursor: pointer; background: none; }
+
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  .shell, .app-shell { border: none; box-shadow: none; }
+  .tab-btn { font-size: 9px; padding: 10px 3px; letter-spacing: 1px; }
+  .score-display { font-size: 68px; }
+  .btn { width: 44px; font-size: 15px; padding: 8px 0; }
+  .timer { font-size: 28px; }
+  .shot-clock { font-size: 36px; }
+  .period-num { font-size: 40px; }
+  .footer-sm-btn { font-size: 9px; padding: 0 5px; height: 36px; }
+  .buzzer-btn { font-size: 14px; }
+}
+@media (max-width: 380px) {
+  .score-display { font-size: 54px; }
+  .tab-btn { font-size: 8px; }
+  .btn { width: 36px; font-size: 13px; }
+}
+
+/* =====================================================
+   HOOPS PRO — pro.css
+   Roster · Stats · Standings · History tabs
+   ===================================================== */
+
+/* ── Two-column panel layout ────────────────────────── */
+.pro-two-col { display: grid; grid-template-columns: 1fr 1fr; flex: 1; }
+.pro-col { display: flex; flex-direction: column; border-right: 1px solid var(--divider); }
+.pro-col:last-child { border-right: none; }
+
+.pro-col-header {
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 4px;
+  padding: 10px 14px 8px;
+  border-bottom: 2px solid var(--divider);
+  position: sticky; top: 0; z-index: 5; background: var(--panel);
+}
+.pro-col-header.home-accent { border-bottom-color: var(--home-color); color: var(--home-color); }
+.pro-col-header.away-accent { border-bottom-color: var(--away-color); color: var(--away-color); }
+
+
+/* ═══════════════════════════════════════════════════════
+   ROSTER TAB
+   ═══════════════════════════════════════════════════════ */
+.add-player-form {
+  display: flex; gap: 4px; padding: 9px;
+  border-bottom: 1px solid #1a1a1a; background: #0c0c0c; flex-wrap: wrap;
+}
+.player-num-input {
+  width: 40px; font-family: 'Bebas Neue', sans-serif; font-size: 15px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--text);
+  padding: 5px 4px; border-radius: 3px; text-align: center; outline: none;
+  min-height: 36px; -webkit-appearance: none;
+}
+.player-name-input {
+  flex: 1; min-width: 70px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--text);
+  padding: 5px 8px; border-radius: 3px; outline: none; min-height: 36px; letter-spacing: 1px;
+}
+.player-pos-select {
+  width: 46px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+  background: var(--panel2); border: 1.5px solid #333; color: var(--text);
+  padding: 4px; border-radius: 3px; outline: none; min-height: 36px;
+}
+.player-num-input:focus,
+.player-name-input:focus,
+.player-pos-select:focus { border-color: var(--accent); }
+
+.add-player-btn {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1px;
+  background: var(--accent); border: none; color: #000;
+  padding: 5px 9px; border-radius: 3px; cursor: pointer; min-height: 36px;
+  transition: opacity .2s;
+}
+.add-player-btn:hover { opacity: .85; }
+
+.roster-list { flex: 1; overflow-y: auto; }
+.roster-row {
+  display: flex; align-items: center; gap: 7px; padding: 9px 12px;
+  border-bottom: 1px solid #1a1a1a; transition: background .15s;
+}
+.roster-row:hover { background: #1a1a1a; }
+.roster-num  { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--muted); min-width: 26px; text-align: right; }
+.roster-pos  { font-size: 9px; letter-spacing: 2px; color: var(--muted); background: #222; padding: 2px 4px; border-radius: 2px; min-width: 24px; text-align: center; }
+.roster-name { flex: 1; font-size: 13px; letter-spacing: 1px; }
+.roster-del  {
+  background: none; border: none; color: #444; cursor: pointer;
+  font-size: 11px; padding: 4px 6px; border-radius: 2px; transition: all .15s;
+  min-width: 28px; min-height: 28px;
+}
+.roster-del:hover { color: var(--red); background: rgba(255,51,51,.1); }
+.roster-empty { padding: 20px 14px; font-size: 11px; color: var(--muted); letter-spacing: 1px; text-align: center; }
+
+
+/* ═══════════════════════════════════════════════════════
+   STATS TAB
+   ═══════════════════════════════════════════════════════ */
+.stat-btn-panel {
+  background: #080808; border-bottom: 2px solid var(--accent);
+  padding: 9px 12px; display: none; flex-direction: column; gap: 7px;
+  flex-shrink: 0; position: sticky; top: 0; z-index: 10;
+}
+.stat-btn-panel.visible { display: flex; }
+.stat-btn-panel.flash-stat { animation: statFlash .18s ease; }
+@keyframes statFlash { 0%{background:#1a1200} 100%{background:#080808} }
+
+.stat-player-label {
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 3px; color: var(--accent);
+}
+.stat-btns-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+.stat-btn {
+  font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 1px;
+  border: 1.5px solid #333; background: var(--panel2); color: var(--text);
+  padding: 9px 2px; border-radius: 4px; cursor: pointer; transition: all .15s; min-height: 42px;
+}
+.stat-btn:active { transform: scale(.93); }
+.stat-btn:hover  { filter: brightness(1.3); background: rgba(255,255,255,.04); }
+.stat-btn.pts  { border-color: var(--home-color); color: var(--home-color); }
+.stat-btn.reb  { border-color: var(--away-color); color: var(--away-color); }
+.stat-btn.ast  { border-color: var(--yellow);     color: var(--yellow); }
+.stat-btn.stl  { border-color: var(--green);      color: var(--green); }
+.stat-btn.blk  { border-color: #b06aff;           color: #b06aff; }
+.stat-btn.to   { border-color: var(--red);        color: var(--red); }
+.stat-btn.pf   { border-color: #FF9900;           color: #FF9900; }
+.stat-btn.undo { border-color: #444; color: #777; font-size: 10px; }
+
+.stats-list { overflow-y: auto; }
+.stats-player-row {
+  display: flex; flex-direction: column; gap: 4px; padding: 9px 12px;
+  border-bottom: 1px solid #1a1a1a; cursor: pointer; transition: background .15s;
+}
+.stats-player-row:hover    { background: #181818; }
+.stats-player-row.selected { background: rgba(255,94,26,.08); border-left: 3px solid var(--accent); }
+
+.stats-player-info { display: flex; align-items: center; gap: 7px; }
+.stats-num  { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--muted); min-width: 24px; }
+.stats-name { font-size: 13px; letter-spacing: 1px; flex: 1; }
+.stats-pos  { font-size: 9px; letter-spacing: 1px; color: var(--muted); background: #222; padding: 1px 4px; border-radius: 2px; }
+.stats-nums { display: flex; gap: 3px; flex-wrap: wrap; }
+
+.stat-chip {
+  font-family: 'Bebas Neue', sans-serif; font-size: 14px;
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 28px; padding: 2px 4px; border-radius: 3px;
+  background: #151515; line-height: 1;
+}
+.stat-chip em {
+  font-style: normal; font-family: 'Barlow Condensed', sans-serif;
+  font-size: 7px; letter-spacing: 1px; color: var(--muted); margin-top: 2px;
+}
+.stat-chip.pts { color: var(--home-color); }
+.stat-chip.reb { color: var(--away-color); }
+.stat-chip.ast { color: var(--yellow); }
+.stat-chip.stl { color: var(--green); }
+.stat-chip.blk { color: #b06aff; }
+.stat-chip.to  { color: var(--red); }
+.stat-chip.pf  { color: #FF9900; }
+
+.danger-btn {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; background: none; border: 1px solid #333; color: #666;
+  padding: 6px 14px; cursor: pointer; border-radius: 3px; transition: all .2s;
+}
+.danger-btn:hover { border-color: var(--red); color: var(--red); }
+.danger-btn.sm { font-size: 10px; padding: 4px 10px; }
+
+
+/* ═══════════════════════════════════════════════════════
+   STANDINGS TAB
+   ═══════════════════════════════════════════════════════ */
+.standings-wrap { flex: 1; display: flex; flex-direction: column; }
+.standings-toolbar, .history-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px 8px; border-bottom: 1px solid #1a1a1a;
+}
+.standings-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; color: var(--accent); }
+.standings-table-wrap { overflow-x: auto; flex: 1; }
+.standings-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 380px; }
+.standings-table thead th {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 9px; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--muted);
+  padding: 9px 10px 7px; border-bottom: 1px solid #222;
+  text-align: center; white-space: nowrap;
+  position: sticky; top: 0; background: var(--panel); z-index: 2;
+}
+.standings-table thead th.team-name-cell { text-align: left; }
+.standings-table td {
+  padding: 10px; border-bottom: 1px solid #1a1a1a;
+  text-align: center; font-family: 'Barlow Condensed', sans-serif; color: var(--text);
+}
+.standings-table td.team-name-cell {
+  text-align: left; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px;
+}
+.standings-table td.rank { font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--muted); width: 26px; }
+.standings-table tr.standings-leader td { color: #fff; }
+.standings-table tr.standings-leader td.rank { color: var(--accent); }
+.standings-table tr:hover td { background: #181818; }
+.diff-pos { color: var(--green); }
+.diff-neg { color: var(--red); }
+.standings-empty { padding: 30px; color: var(--muted); font-size: 12px; letter-spacing: 1px; text-align: center; }
+.streak-badge { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1px; padding: 2px 6px; border-radius: 3px; }
+.streak-w { background: rgba(0,230,118,.14); color: var(--green); }
+.streak-l { background: rgba(255,51,51,.12); color: var(--red); }
+
+
+/* ═══════════════════════════════════════════════════════
+   HISTORY TAB
+   ═══════════════════════════════════════════════════════ */
+.history-list { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.history-empty { padding: 30px; color: var(--muted); font-size: 12px; letter-spacing: 1px; text-align: center; }
+
+.history-card { background: #0f0f0f; border: 1px solid #222; border-radius: 6px; overflow: hidden; }
+.history-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; border-bottom: 1px solid #1a1a1a; background: #0a0a0a;
+}
+.history-date   { font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+.history-league { font-size: 10px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
+.history-del    { background: none; border: none; color: #444; cursor: pointer; font-size: 11px; padding: 4px 6px; border-radius: 2px; transition: color .15s; }
+.history-del:hover { color: var(--red); }
+
+.history-score-row { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; }
+.history-team  { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 3px; color: var(--muted); flex: 1; }
+.history-team:last-child { text-align: right; }
+.history-team.winner { color: var(--text); }
+.history-score { font-family: 'Bebas Neue', sans-serif; font-size: 34px; line-height: 1; color: var(--muted); }
+.history-score.winner { color: var(--accent); }
+.history-vs    { color: #333; font-size: 16px; }
+
+.boxscore-toggle {
+  width: 100%; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; background: none; border: none; border-top: 1px solid #1a1a1a;
+  color: var(--muted); padding: 7px; cursor: pointer; transition: color .15s;
+}
+.boxscore-toggle:hover { color: var(--text); }
+
+.boxscore-wrap { padding: 0 10px 10px; }
+.bs-team-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 3px; padding: 8px 4px 4px; }
+.bs-team-label.home { color: var(--home-color); }
+.bs-team-label.away { color: var(--away-color); }
+.bs-table-wrap { overflow-x: auto; }
+.bs-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 300px; }
+.bs-table th { font-size: 8px; letter-spacing: 2px; color: var(--muted); padding: 4px 5px; border-bottom: 1px solid #222; text-align: center; }
+.bs-table td { padding: 5px; border-bottom: 1px solid #1a1a1a; text-align: center; color: #bbb; font-family: 'Barlow Condensed', sans-serif; }
+.bs-table td.bs-name { text-align: left; color: var(--text); }
+.bs-table td.bs-pts  { color: var(--accent); font-weight: 700; }
+.bs-table tfoot td   { color: var(--text); font-weight: 600; border-top: 1px solid #333; border-bottom: none; }
+.bs-table tfoot td.bs-pts { color: var(--accent); }
+.bs-empty { padding: 10px; font-size: 11px; color: var(--muted); }
+
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 700px) {
+  .stat-btns-grid { grid-template-columns: repeat(4, 1fr); }
+  .stat-btn { font-size: 11px; min-height: 44px; }
+  .standings-table { font-size: 12px; }
+  .standings-table td, .standings-table th { padding: 8px 7px; }
+  .player-name-input { min-width: 60px; font-size: 13px; }
+  .player-num-input  { width: 36px; }
+  .history-score { font-size: 28px; }
+  .history-team  { font-size: 14px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="flash" id="flash"></div>
+
+<div class="shell">
+
+  <!-- Header -->
+  <div class="app-header">
+    <button class="app-brand" id="headerLeagueName" onclick="openLeagueEditor()">&#x2B21; Hoops</button>
+    <span class="app-period" id="periodLabel">1st Quarter</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <a href="/dashboard" class="dash-back">&#8592; Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Tab nav -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="scoreboard">&#127936; Board</button>
+    <button class="tab-btn" data-tab="roster">&#128101; Roster</button>
+    <button class="tab-btn" data-tab="stats">&#128202; Stats</button>
+    <button class="tab-btn" data-tab="standings">&#127942; Standings</button>
+    <button class="tab-btn" data-tab="history">&#128196; History</button>
+  </nav>
+
+  <!-- ═══ SCOREBOARD ═══ -->
+  <div class="tab-panel active" id="tab-scoreboard">
+
+    <div class="scores-row">
+      <div class="team home">
+        <input class="team-name-input" id="homeName" value="HOME" maxlength="12"/>
+        <div class="score-display" id="homeScore">0</div>
+        <div class="score-btns">
+          <button class="btn pts3" onclick="addScore('home',3)">+3</button>
+          <button class="btn pts2" onclick="addScore('home',2)">+2</button>
+          <button class="btn pts1" onclick="addScore('home',1)">+1</button>
+          <button class="btn minus" onclick="addScore('home',-1)">&#8722;</button>
+        </div>
+        <div class="logo-upload-zone" id="homeLogoZone" onclick="document.getElementById('homeLogoInput').click()">
+          <img class="logo-preview" id="homeLogoImg" src="" alt="" style="display:none;"/>
+          <span class="logo-placeholder" id="homeLogoPlaceholder">+ Logo</span>
+          <button class="logo-remove" id="homeLogoRemove" onclick="removeLogo(event,'home')" style="display:none;">&#10005;</button>
+        </div>
+        <input type="file" id="homeLogoInput" accept="image/*" style="display:none;" onchange="uploadLogo(event,'home')"/>
+      </div>
+      <div class="team away">
+        <input class="team-name-input" id="awayName" value="AWAY" maxlength="12"/>
+        <div class="score-display" id="awayScore">0</div>
+        <div class="score-btns">
+          <button class="btn pts3" onclick="addScore('away',3)">+3</button>
+          <button class="btn pts2" onclick="addScore('away',2)">+2</button>
+          <button class="btn pts1" onclick="addScore('away',1)">+1</button>
+          <button class="btn minus" onclick="addScore('away',-1)">&#8722;</button>
+        </div>
+        <div class="logo-upload-zone" id="awayLogoZone" onclick="document.getElementById('awayLogoInput').click()">
+          <img class="logo-preview" id="awayLogoImg" src="" alt="" style="display:none;"/>
+          <span class="logo-placeholder" id="awayLogoPlaceholder">+ Logo</span>
+          <button class="logo-remove" id="awayLogoRemove" onclick="removeLogo(event,'away')" style="display:none;">&#10005;</button>
+        </div>
+        <input type="file" id="awayLogoInput" accept="image/*" style="display:none;" onchange="uploadLogo(event,'away')"/>
+      </div>
+    </div>
+
+    <div class="clocks-row">
+      <div class="clock-cell">
+        <div class="section-label">QUARTER CLOCK</div>
+        <div class="timer" id="timer">12:00.00</div>
+        <div class="timer-controls">
+          <div class="btn-icon" id="playBtn" onclick="toggleTimer()">&#9654;</div>
+          <div class="btn-icon" onclick="resetTimer()">&#8635;</div>
+          <div class="btn-icon" onclick="openMinsEditor()">&#9998;</div>
+        </div>
+      </div>
+      <div class="period-cell">
+        <div class="period-num" id="periodNum">1</div>
+        <div class="period-sub">Period</div>
+        <div class="period-btns">
+          <div class="btn-icon sm" onclick="changePeriod(-1)">&#8722;</div>
+          <div class="btn-icon sm" onclick="changePeriod(1)">+</div>
+        </div>
+      </div>
+      <div class="clock-cell">
+        <div class="section-label">SHOT CLOCK</div>
+        <div class="shot-clock" id="shotClock">24</div>
+        <div class="shot-clock-controls">
+          <div class="btn-icon sc-btn" onclick="setShotClock(24)">24</div>
+          <div class="btn-icon sc-btn" onclick="setShotClock(14)">14</div>
+          <div class="btn-icon" id="scPlayBtn" onclick="toggleShotClock()">&#9654;</div>
+          <div class="btn-icon" onclick="resetShotClock()">&#8635;</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fouls-row">
+      <div class="fouls-panel">
+        <span class="fouls-label">Fouls</span>
+        <div class="fouls-dots" id="homeDotsContainer"></div>
+        <span class="fouls-count" id="homeFoulsCount">0</span>
+      </div>
+      <div class="fouls-panel">
+        <span class="fouls-count" id="awayFoulsCount">0</span>
+        <div class="fouls-dots" id="awayDotsContainer"></div>
+        <span class="fouls-label">Fouls</span>
+      </div>
+    </div>
+
+    <div class="timeouts-row">
+      <div class="timeouts-header">
+        <span class="timeouts-title">Timeouts</span>
+        <button class="btn-icon sm to-setup-btn" onclick="openTimeoutSetup()">&#9881;</button>
+      </div>
+      <div class="timeouts-body">
+        <div class="timeout-panel home">
+          <span class="timeout-label">TO</span>
+          <div class="timeout-dots" id="homeTimeoutDots"></div>
+          <span class="timeout-count" id="homeTimeoutsCount">5</span>
+          <div class="timeout-btns">
+            <button class="btn-icon sm to-use"     onclick="useTimeout('home')">&#8722;</button>
+            <button class="btn-icon sm to-restore" onclick="restoreTimeout('home')">+</button>
+          </div>
+        </div>
+        <div class="timeout-panel away">
+          <div class="timeout-btns">
+            <button class="btn-icon sm to-restore" onclick="restoreTimeout('away')">+</button>
+            <button class="btn-icon sm to-use"     onclick="useTimeout('away')">&#8722;</button>
+          </div>
+          <span class="timeout-count" id="awayTimeoutsCount">5</span>
+          <div class="timeout-dots" id="awayTimeoutDots"></div>
+          <span class="timeout-label">TO</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="save-game-bar">
+      <button class="save-game-btn" onclick="saveGame()">&#128190; Save Game to History &amp; Standings</button>
+    </div>
+
+  </div><!-- /tab-scoreboard -->
+
+  <!-- ═══ ROSTER ═══ -->
+  <div class="tab-panel" id="tab-roster">
+    <div class="pro-two-col">
+      <div class="pro-col">
+        <div class="pro-col-header home-accent" id="homeRosterTitle">HOME</div>
+        <div class="add-player-form">
+          <input type="number" class="player-num-input" id="homePlayerNum" placeholder="#" min="0" max="99"/>
+          <input type="text"   class="player-name-input" id="homePlayerName" placeholder="Player name" maxlength="20"/>
+          <select class="player-pos-select" id="homePlayerPos">
+            <option>PG</option><option>SG</option><option>SF</option><option>PF</option><option>C</option><option value="-">-</option>
+          </select>
+          <button class="add-player-btn" onclick="addPlayer('home')">+ Add</button>
+        </div>
+        <div class="roster-list" id="homeRosterList"></div>
+      </div>
+      <div class="pro-col">
+        <div class="pro-col-header away-accent" id="awayRosterTitle">AWAY</div>
+        <div class="add-player-form">
+          <input type="number" class="player-num-input" id="awayPlayerNum" placeholder="#" min="0" max="99"/>
+          <input type="text"   class="player-name-input" id="awayPlayerName" placeholder="Player name" maxlength="20"/>
+          <select class="player-pos-select" id="awayPlayerPos">
+            <option>PG</option><option>SG</option><option>SF</option><option>PF</option><option>C</option><option value="-">-</option>
+          </select>
+          <button class="add-player-btn" onclick="addPlayer('away')">+ Add</button>
+        </div>
+        <div class="roster-list" id="awayRosterList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STATS ═══ -->
+  <div class="tab-panel" id="tab-stats">
+    <div class="stat-btn-panel" id="statBtnPanel">
+      <div class="stat-player-label" id="statPlayerLabel">Tap a player to select</div>
+      <div class="stat-btns-grid">
+        <button class="stat-btn pts"  onclick="recordStat('pts',1)">+PTS</button>
+        <button class="stat-btn reb"  onclick="recordStat('reb',1)">+REB</button>
+        <button class="stat-btn ast"  onclick="recordStat('ast',1)">+AST</button>
+        <button class="stat-btn stl"  onclick="recordStat('stl',1)">+STL</button>
+        <button class="stat-btn blk"  onclick="recordStat('blk',1)">+BLK</button>
+        <button class="stat-btn to"   onclick="recordStat('to',1)">+TO</button>
+        <button class="stat-btn pf"   onclick="recordStat('pf',1)">+FOUL</button>
+        <button class="stat-btn undo" onclick="recordStat('pts',-1)">&#8722;PTS</button>
+      </div>
+    </div>
+    <div class="pro-two-col" style="flex:1;">
+      <div class="pro-col">
+        <div class="pro-col-header home-accent" id="homeStatsTitle">HOME</div>
+        <div class="stats-list" id="homeStatsList"></div>
+      </div>
+      <div class="pro-col">
+        <div class="pro-col-header away-accent" id="awayStatsTitle">AWAY</div>
+        <div class="stats-list" id="awayStatsList"></div>
+      </div>
+    </div>
+    <div style="padding:10px 14px;">
+      <button class="danger-btn" onclick="resetGameStats()">&#8635; Reset All Stats</button>
+    </div>
+  </div>
+
+  <!-- ═══ STANDINGS ═══ -->
+  <div class="tab-panel" id="tab-standings">
+    <div class="standings-wrap">
+      <div class="standings-toolbar">
+        <span class="standings-title">League Standings</span>
+        <button class="danger-btn sm" onclick="resetStandings()">Clear</button>
+      </div>
+      <div class="standings-table-wrap">
+        <table class="standings-table">
+          <thead><tr>
+            <th>#</th><th class="team-name-cell">Team</th>
+            <th>W</th><th>L</th><th>Win%</th><th>GB</th><th>+/-</th><th>Streak</th>
+          </tr></thead>
+          <tbody id="standingsBody">
+            <tr><td colspan="8" class="standings-empty">No games saved yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HISTORY ═══ -->
+  <div class="tab-panel" id="tab-history">
+    <div class="history-toolbar">
+      <span class="standings-title">Game History</span>
+      <button class="danger-btn sm" onclick="clearHistory()">Clear All</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty">No games saved yet.</div>
+    </div>
+  </div>
+
+  <!-- ═══ STICKY FOOTER ═══ -->
+  <div class="footer">
+    <div class="possession">
+      <span class="poss-label">Ball</span>
+      <div class="poss-arrow home" id="possHome" onclick="setPossession('home')"></div>
+      <div class="poss-arrow away inactive" id="possAway" onclick="setPossession('away')"></div>
+    </div>
+    <button class="buzzer-btn" onclick="buzzer()">&#128276; BUZZER</button>
+    <div class="footer-right">
+      <button class="footer-sm-btn theme-btn"       onclick="openThemeModal()"                    title="Theme">&#127912;</button>
+      <button class="footer-sm-btn viewer-link-btn"  onclick="window.open('/viewer','_blank')"     title="Viewer">&#128250;</button>
+      <button class="footer-sm-btn overlay-link-btn" onclick="window.open('/overlay','_blank')"    title="Overlay">&#127909;</button>
+      <button class="footer-sm-btn stats-link-btn"   onclick="window.open('/stats','_blank')"      title="Stats">&#128202;</button>
+      <button class="footer-sm-btn reset-btn"        onclick="resetAll()"                          title="Reset">&#8635;</button>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Minutes per quarter -->
+<div class="modal-overlay" id="minsModal">
+  <div class="modal">
+    <div class="modal-title">Minutes Per Quarter</div>
+    <div class="modal-body">
+      <div class="mins-options">
+        <button class="mins-opt" onclick="setMinsPerQuarter(5)">5</button>
+        <button class="mins-opt" onclick="setMinsPerQuarter(10)">10</button>
+        <button class="mins-opt" onclick="setMinsPerQuarter(12)">12</button>
+        <button class="mins-opt" onclick="setMinsPerQuarter(15)">15</button>
+        <button class="mins-opt" onclick="setMinsPerQuarter(20)">20</button>
+      </div>
+      <div class="custom-mins">
+        <input type="number" id="customMins" min="1" max="60" placeholder="Custom (1–60)"/>
+        <button class="btn" onclick="applyCustomMins()">Set</button>
+      </div>
+    </div>
+    <button class="modal-close" onclick="closeMinsEditor()">Close</button>
+  </div>
+</div>
+
+<!-- Theme -->
+<div class="modal-overlay" id="themeModal">
+  <div class="modal">
+    <div class="modal-title">&#127912; Theme</div>
+    <div class="modal-body">
+      <div class="theme-section-label">Presets</div>
+      <div class="theme-presets" id="themePresets"></div>
+      <div class="theme-section-label" style="margin-top:16px;">Custom Colors</div>
+      <div class="theme-custom-grid">
+        <div class="theme-custom-row"><label>Accent</label><input type="color" id="colorAccent" value="#FF5E1A" oninput="applyCustomTheme()"/></div>
+        <div class="theme-custom-row"><label>Home</label><input type="color" id="colorHome" value="#FF5E1A" oninput="applyCustomTheme()"/></div>
+        <div class="theme-custom-row"><label>Away</label><input type="color" id="colorAway" value="#00C2FF" oninput="applyCustomTheme()"/></div>
+        <div class="theme-custom-row"><label>Clock</label><input type="color" id="colorClock" value="#FFD600" oninput="applyCustomTheme()"/></div>
+        <div class="theme-custom-row"><label>Background</label><input type="color" id="colorBg" value="#0D0D0D" oninput="applyCustomTheme()"/></div>
+        <div class="theme-custom-row"><label>Panel</label><input type="color" id="colorPanel" value="#161616" oninput="applyCustomTheme()"/></div>
+      </div>
+    </div>
+    <button class="modal-close" onclick="closeThemeModal()">Close</button>
+  </div>
+</div>
+
+<!-- League name -->
+<div class="modal-overlay" id="leagueModal">
+  <div class="modal">
+    <div class="modal-title">League Name</div>
+    <div class="modal-body">
+      <div class="custom-mins">
+        <input type="text" id="leagueInput" maxlength="20" placeholder="e.g. NBA, PBA, UAAP" style="font-size:16px;"/>
+        <button class="btn" onclick="applyLeagueName()">Set</button>
+      </div>
+    </div>
+    <button class="modal-close" onclick="closeLeagueEditor()">Close</button>
+  </div>
+</div>
+
+<!-- Timeout setup -->
+<div class="modal-overlay" id="timeoutSetupModal">
+  <div class="modal">
+    <div class="modal-title">&#9881; Timeout Setup</div>
+    <div class="modal-body">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;text-align:center;">Timeouts per team</div>
+      <div class="mins-options">
+        <button class="mins-opt to-opt" data-val="2" onclick="setMaxTimeouts(2)">2</button>
+        <button class="mins-opt to-opt" data-val="3" onclick="setMaxTimeouts(3)">3</button>
+        <button class="mins-opt to-opt" data-val="4" onclick="setMaxTimeouts(4)">4</button>
+        <button class="mins-opt to-opt" data-val="5" onclick="setMaxTimeouts(5)">5</button>
+        <button class="mins-opt to-opt" data-val="6" onclick="setMaxTimeouts(6)">6</button>
+      </div>
+      <div class="custom-mins">
+        <input type="number" id="customToInput" min="1" max="10" placeholder="Custom (1–10)"/>
+        <button class="btn" onclick="applyCustomTimeouts()">Set</button>
+      </div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;letter-spacing:1px;">Both teams reset to new count.</div>
+    </div>
+    <button class="modal-close" onclick="closeTimeoutSetup()">Close</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================
+   HOOPS PRO — script.js
+   Core scoreboard: clocks, score, fouls, timeouts,
+   themes, logos, buzzer, localStorage sync.
+   ===================================================== */
+
+// ── State ────────────────────────────────────────────
+let homeScore  = 0;
+let awayScore  = 0;
+let homeFouls  = 0;
+let awayFouls  = 0;
+let period     = 1;
+let possession = 'home';
+
+// Quarter clock (centiseconds = 1/100 sec)
+let minsPerQuarter    = 12;
+let timerCentiseconds = minsPerQuarter * 60 * 100;
+let timerRunning      = false;
+let timerInterval     = null;
+
+// Shot clock
+let shotClockSeconds  = 24;
+let shotClockDefault  = 24;
+let shotClockRunning  = false;
+let shotClockInterval = null;
+
+// Timeouts
+let homeTimeouts = 5;
+let awayTimeouts = 5;
+let MAX_TIMEOUTS = 5;
+
+// Theme & logos
+let currentTheme  = 'default';
+let homeLogoData  = null;
+let awayLogoData  = null;
+
+// League name
+let leagueName = 'Hoops';
+
+const PERIOD_NAMES = ['—', '1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'];
+const MAX_FOULS    = 5;
+
+
+// ── Preset themes ────────────────────────────────────
+const THEMES = [
+  { id:'default', name:'Fire',   accent:'#FF5E1A', homeColor:'#FF5E1A', awayColor:'#00C2FF', yellow:'#FFD600', dark:'#0D0D0D', panel:'#161616' },
+  { id:'nba',     name:'NBA',    accent:'#C9082A', homeColor:'#C9082A', awayColor:'#1D428A', yellow:'#FDB927', dark:'#0A0A0A', panel:'#141414' },
+  { id:'midnight',name:'Night',  accent:'#7B2FBE', homeColor:'#A855F7', awayColor:'#22D3EE', yellow:'#F0ABFC', dark:'#05020D', panel:'#0F0A1A' },
+  { id:'forest',  name:'Forest', accent:'#16A34A', homeColor:'#22C55E', awayColor:'#FACC15', yellow:'#BEF264', dark:'#050D07', panel:'#0C1610' },
+  { id:'ice',     name:'Ice',    accent:'#0EA5E9', homeColor:'#38BDF8', awayColor:'#F97316', yellow:'#E0F2FE', dark:'#020B12', panel:'#071622' },
+  { id:'gold',    name:'Gold',   accent:'#CA8A04', homeColor:'#EAB308', awayColor:'#DC2626', yellow:'#FEF08A', dark:'#0C0900', panel:'#1A1400' },
+  { id:'mono',    name:'Mono',   accent:'#E5E5E5', homeColor:'#FFFFFF', awayColor:'#999999', yellow:'#D4D4D4', dark:'#000000', panel:'#111111' },
+  { id:'cherry',  name:'Cherry', accent:'#E11D48', homeColor:'#FB7185', awayColor:'#FCD34D', yellow:'#FCA5A5', dark:'#0C0007', panel:'#180010' },
+];
+
+
+// ── Theme ────────────────────────────────────────────
+function applyTheme(t, save) {
+  if (save === undefined) save = true;
+  const r = document.documentElement.style;
+  r.setProperty('--accent',     t.accent);
+  r.setProperty('--orange',     t.accent);
+  r.setProperty('--home-color', t.homeColor);
+  r.setProperty('--away-color', t.awayColor);
+  r.setProperty('--yellow',     t.yellow);
+  r.setProperty('--dark',       t.dark);
+  r.setProperty('--panel',      t.panel);
+  r.setProperty('--panel2',     adjustHex(t.panel, 12));
+
+  // Sync color pickers
+  document.getElementById('colorAccent').value = t.accent;
+  document.getElementById('colorHome').value   = t.homeColor;
+  document.getElementById('colorAway').value   = t.awayColor;
+  document.getElementById('colorClock').value  = t.yellow;
+  document.getElementById('colorBg').value     = t.dark;
+  document.getElementById('colorPanel').value  = t.panel;
+
+  if (save) { currentTheme = t.id || 'custom'; syncState(); }
+
+  document.querySelectorAll('.theme-swatch').forEach(function(sw) {
+    sw.classList.toggle('active', sw.dataset.id === (t.id || ''));
+  });
+}
+
+function adjustHex(hex, amount) {
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(function(c){ return c+c; }).join('');
+  const r = Math.min(255, parseInt(hex.slice(0,2),16) + amount);
+  const g = Math.min(255, parseInt(hex.slice(2,4),16) + amount);
+  const b = Math.min(255, parseInt(hex.slice(4,6),16) + amount);
+  return '#' + [r,g,b].map(function(v){ return v.toString(16).padStart(2,'0'); }).join('');
+}
+
+function applyCustomTheme() {
+  applyTheme({
+    id: 'custom', name: 'Custom',
+    accent:    document.getElementById('colorAccent').value,
+    homeColor: document.getElementById('colorHome').value,
+    awayColor: document.getElementById('colorAway').value,
+    yellow:    document.getElementById('colorClock').value,
+    dark:      document.getElementById('colorBg').value,
+    panel:     document.getElementById('colorPanel').value,
+  });
+}
+
+function buildThemeSwatches() {
+  const container = document.getElementById('themePresets');
+  container.innerHTML = '';
+  THEMES.forEach(function(t) {
+    const sw = document.createElement('div');
+    sw.className  = 'theme-swatch';
+    sw.dataset.id = t.id;
+    sw.title      = t.name;
+    sw.innerHTML  =
+      '<div class="theme-swatch-circle" style="background:linear-gradient(135deg,' + t.accent + ' 50%,' + t.awayColor + ' 50%)"></div>' +
+      '<span class="theme-swatch-name">' + t.name + '</span>';
+    sw.addEventListener('click', function(){ applyTheme(t); });
+    container.appendChild(sw);
+  });
+}
+
+function openThemeModal() {
+  buildThemeSwatches();
+  document.querySelectorAll('.theme-swatch').forEach(function(sw) {
+    sw.classList.toggle('active', sw.dataset.id === currentTheme);
+  });
+  document.getElementById('themeModal').classList.add('open');
+}
+function closeThemeModal() { document.getElementById('themeModal').classList.remove('open'); }
+document.getElementById('themeModal').addEventListener('click', function(e){ if (e.target === this) closeThemeModal(); });
+
+
+// ── Logo upload ──────────────────────────────────────
+function uploadLogo(event, team) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const url = e.target.result;
+    if (team === 'home') { homeLogoData = url; showLogo('home', url); }
+    else                 { awayLogoData = url; showLogo('away', url); }
+    syncState();
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+function showLogo(team, url) {
+  document.getElementById(team + 'LogoImg').src              = url;
+  document.getElementById(team + 'LogoImg').style.display    = 'block';
+  document.getElementById(team + 'LogoPlaceholder').style.display = 'none';
+  document.getElementById(team + 'LogoRemove').style.display = 'flex';
+}
+function removeLogo(event, team) {
+  event.stopPropagation();
+  if (team === 'home') { homeLogoData = null; hideLogo('home'); }
+  else                 { awayLogoData = null; hideLogo('away'); }
+  syncState();
+}
+function hideLogo(team) {
+  document.getElementById(team + 'LogoImg').src              = '';
+  document.getElementById(team + 'LogoImg').style.display    = 'none';
+  document.getElementById(team + 'LogoPlaceholder').style.display = '';
+  document.getElementById(team + 'LogoRemove').style.display = 'none';
+}
+
+
+// ── LocalStorage sync (for viewer / overlay) ─────────
+function syncState() {
+  const root  = document.documentElement.style;
+  const state = {
+    homeScore, awayScore, homeFouls, awayFouls,
+    period, possession,
+    timerCentiseconds, timerRunning,
+    shotClockSeconds, shotClockRunning,
+    homeName:    document.getElementById('homeName').value  || 'HOME',
+    awayName:    document.getElementById('awayName').value  || 'AWAY',
+    leagueName,
+    periodLabel: PERIOD_NAMES[period] || 'OT',
+    theme: {
+      accent:    root.getPropertyValue('--accent').trim()     || '#FF5E1A',
+      homeColor: root.getPropertyValue('--home-color').trim() || '#FF5E1A',
+      awayColor: root.getPropertyValue('--away-color').trim() || '#00C2FF',
+      yellow:    root.getPropertyValue('--yellow').trim()     || '#FFD600',
+      dark:      root.getPropertyValue('--dark').trim()       || '#0D0D0D',
+      panel:     root.getPropertyValue('--panel').trim()      || '#161616',
+    },
+    homeLogoData, awayLogoData,
+    homeTimeouts, awayTimeouts, maxTimeouts: MAX_TIMEOUTS,
+  };
+  localStorage.setItem('scoreboard', JSON.stringify(state));
+}
+
+
+// ── Scoring ──────────────────────────────────────────
+function addScore(team, pts) {
+  if (team === 'home') {
+    homeScore = Math.max(0, homeScore + pts);
+    document.getElementById('homeScore').textContent = homeScore;
+    animateBump('homeScore');
+  } else {
+    awayScore = Math.max(0, awayScore + pts);
+    document.getElementById('awayScore').textContent = awayScore;
+    animateBump('awayScore');
+  }
+  syncState();
+}
+function animateBump(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+
+// ── Quarter clock ────────────────────────────────────
+function formatTime(cs) {
+  const tot = Math.floor(cs / 100);
+  const m   = Math.floor(tot / 60);
+  const s   = tot % 60;
+  const cc  = Math.floor(cs % 100);
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + String(cc).padStart(2,'0');
+}
+
+function toggleTimer() {
+  timerRunning = !timerRunning;
+  document.getElementById('playBtn').textContent = timerRunning ? '⏸' : '▶';
+  document.getElementById('timer').classList.toggle('running', timerRunning);
+
+  if (timerRunning) {
+    timerInterval = setInterval(function() {
+      if (timerCentiseconds > 0) {
+        timerCentiseconds--;
+        document.getElementById('timer').textContent = formatTime(timerCentiseconds);
+        if (timerCentiseconds % 10 === 0) syncState();
+      } else {
+        stopTimer(); buzzer(); syncState();
+      }
+    }, 10);
+    if (!shotClockRunning) startShotClock();
+  } else {
+    clearInterval(timerInterval);
+    syncState();
+  }
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('timer').classList.remove('running');
+}
+function resetTimer() {
+  stopTimer();
+  timerCentiseconds = minsPerQuarter * 60 * 100;
+  document.getElementById('timer').textContent = formatTime(timerCentiseconds);
+  syncState();
+}
+
+
+// ── Minutes-per-quarter modal ────────────────────────
+function openMinsEditor() {
+  document.getElementById('minsModal').classList.add('open');
+  document.querySelectorAll('.mins-opt').forEach(function(btn) {
+    btn.classList.toggle('active', parseInt(btn.textContent) === minsPerQuarter);
+  });
+}
+function closeMinsEditor() {
+  document.getElementById('minsModal').classList.remove('open');
+  document.getElementById('customMins').value = '';
+}
+function setMinsPerQuarter(mins) {
+  minsPerQuarter = Math.max(1, Math.min(60, mins));
+  resetTimer();
+  document.querySelectorAll('.mins-opt').forEach(function(btn) {
+    btn.classList.toggle('active', parseInt(btn.textContent) === minsPerQuarter);
+  });
+}
+function applyCustomMins() {
+  const val = parseInt(document.getElementById('customMins').value);
+  if (!isNaN(val) && val >= 1 && val <= 60) { setMinsPerQuarter(val); closeMinsEditor(); }
+  else document.getElementById('customMins').focus();
+}
+document.getElementById('minsModal').addEventListener('click', function(e){ if (e.target === this) closeMinsEditor(); });
+
+
+// ── Period ───────────────────────────────────────────
+function changePeriod(delta) {
+  period = Math.max(1, Math.min(5, period + delta));
+  document.getElementById('periodNum').textContent   = period;
+  document.getElementById('periodLabel').textContent = PERIOD_NAMES[period] || 'OT';
+  resetTimer(); resetShotClock(); syncState();
+}
+
+
+// ── Shot clock ───────────────────────────────────────
+function updateShotClockDisplay() {
+  const el = document.getElementById('shotClock');
+  el.textContent = shotClockSeconds;
+  el.classList.remove('warning', 'critical');
+  if (shotClockSeconds <= 5)       el.classList.add('critical');
+  else if (shotClockSeconds <= 10) el.classList.add('warning');
+}
+function startShotClock() {
+  clearInterval(shotClockInterval);
+  shotClockRunning = true;
+  document.getElementById('scPlayBtn').textContent = '⏸';
+  document.getElementById('shotClock').classList.add('running');
+  shotClockInterval = setInterval(function() {
+    if (shotClockSeconds > 0) {
+      shotClockSeconds--;
+      updateShotClockDisplay();
+      syncState();
+    } else {
+      stopShotClock(); shotClockViolation(); syncState();
+    }
+  }, 1000);
+}
+function stopShotClock() {
+  clearInterval(shotClockInterval);
+  shotClockRunning = false;
+  const btn = document.getElementById('scPlayBtn');
+  if (btn) btn.textContent = '▶';
+  document.getElementById('shotClock').classList.remove('running');
+}
+function toggleShotClock() {
+  if (shotClockRunning) { stopShotClock(); syncState(); }
+  else                  { startShotClock(); syncState(); }
+}
+function setShotClock(secs) {
+  stopShotClock();
+  shotClockSeconds = secs; shotClockDefault = secs;
+  updateShotClockDisplay(); startShotClock(); syncState();
+}
+function resetShotClock() {
+  stopShotClock();
+  shotClockSeconds = shotClockDefault;
+  updateShotClockDisplay(); startShotClock(); syncState();
+}
+function shotClockViolation() {
+  const flash = document.getElementById('flash');
+  flash.style.background = '#FF3333';
+  flash.classList.remove('active'); void flash.offsetWidth; flash.classList.add('active');
+  flash.style.background = '';
+  try {
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 1200; osc.type = 'sawtooth';
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+
+// ── Fouls ────────────────────────────────────────────
+function buildDots() {
+  ['home','away'].forEach(function(team) {
+    const container = document.getElementById(team + 'DotsContainer');
+    container.innerHTML = '';
+    const count = team === 'home' ? homeFouls : awayFouls;
+    for (let i = 0; i < MAX_FOULS; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'foul-dot ' + team;
+      if (count > i) dot.classList.add('active');
+      dot.title = 'Set ' + team + ' fouls to ' + (i + 1);
+      dot.addEventListener('click', (function(t, idx) { return function(){ toggleFoul(t, idx); }; })(team, i));
+      container.appendChild(dot);
+    }
+  });
+}
+function updateFoulDisplay(id, count) {
+  const el = document.getElementById(id);
+  if (count >= MAX_FOULS) { el.textContent = 'PENALTY'; el.classList.add('penalty'); }
+  else                    { el.textContent = count;     el.classList.remove('penalty'); }
+}
+function toggleFoul(team, idx) {
+  if (team === 'home') {
+    homeFouls = (homeFouls === idx + 1) ? idx : idx + 1;
+    updateFoulDisplay('homeFoulsCount', homeFouls);
+  } else {
+    awayFouls = (awayFouls === idx + 1) ? idx : idx + 1;
+    updateFoulDisplay('awayFoulsCount', awayFouls);
+  }
+  buildDots(); syncState();
+}
+
+
+// ── Possession ───────────────────────────────────────
+function setPossession(team) {
+  possession = team;
+  document.getElementById('possHome').classList.toggle('inactive', team !== 'home');
+  document.getElementById('possAway').classList.toggle('inactive', team !== 'away');
+  syncState();
+}
+
+
+// ── Buzzer (NBA-style foghorn) ───────────────────────
+function buzzer() {
+  const flash = document.getElementById('flash');
+  flash.style.background = '#FFD600';
+  flash.classList.remove('active'); void flash.offsetWidth; flash.classList.add('active');
+  flash.style.background = '';
+
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    function makeHorn(freq, type, start, dur, vol) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const lfo  = ctx.createOscillator();
+      const lfog = ctx.createGain();
+      lfo.frequency.value = 8;
+      lfog.gain.value = freq * 0.015;
+      lfo.connect(lfog); lfog.connect(osc.frequency);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      osc.frequency.linearRampToValueAtTime(freq * 0.94, start + dur);
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(vol, start + 0.03);
+      gain.gain.setValueAtTime(vol, start + dur - 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      osc.connect(gain); gain.connect(ctx.destination);
+      lfo.start(start); lfo.stop(start + dur);
+      osc.start(start); osc.stop(start + dur);
+    }
+    makeHorn(110, 'sawtooth', now,        1.15, 0.45);
+    makeHorn(220, 'square',   now,        1.15, 0.20);
+    makeHorn(440, 'square',   now,        1.15, 0.08);
+    makeHorn(110, 'sawtooth', now + 1.25, 0.9,  0.45);
+    makeHorn(220, 'square',   now + 1.25, 0.9,  0.20);
+  } catch(e) {}
+}
+
+
+// ── League name ──────────────────────────────────────
+function openLeagueEditor() {
+  document.getElementById('leagueInput').value = leagueName;
+  document.getElementById('leagueModal').classList.add('open');
+  setTimeout(function(){ document.getElementById('leagueInput').select(); }, 50);
+}
+function closeLeagueEditor() { document.getElementById('leagueModal').classList.remove('open'); }
+function applyLeagueName() {
+  const val = document.getElementById('leagueInput').value.trim();
+  if (val) {
+    leagueName = val;
+    document.getElementById('headerLeagueName').textContent = '⬡ ' + leagueName;
+    syncState();
+  }
+  closeLeagueEditor();
+}
+document.getElementById('leagueModal').addEventListener('click', function(e){ if (e.target === this) closeLeagueEditor(); });
+document.getElementById('leagueInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') applyLeagueName(); });
+
+
+// ── Timeout Setup ────────────────────────────────────
+function openTimeoutSetup() {
+  document.getElementById('timeoutSetupModal').classList.add('open');
+  document.querySelectorAll('.to-opt').forEach(function(btn) {
+    btn.classList.toggle('active', parseInt(btn.dataset.val) === MAX_TIMEOUTS);
+  });
+  document.getElementById('customToInput').value = '';
+}
+function closeTimeoutSetup() { document.getElementById('timeoutSetupModal').classList.remove('open'); }
+function setMaxTimeouts(n) {
+  n = Math.max(1, Math.min(10, n));
+  MAX_TIMEOUTS = n;
+  homeTimeouts = awayTimeouts = n;
+  updateTimeoutDisplay('homeTimeoutsCount', homeTimeouts);
+  updateTimeoutDisplay('awayTimeoutsCount', awayTimeouts);
+  buildAllTimeoutDots(); syncState();
+  document.querySelectorAll('.to-opt').forEach(function(btn) {
+    btn.classList.toggle('active', parseInt(btn.dataset.val) === n);
+  });
+}
+function applyCustomTimeouts() {
+  const val = parseInt(document.getElementById('customToInput').value);
+  if (!isNaN(val) && val >= 1 && val <= 10) { setMaxTimeouts(val); closeTimeoutSetup(); }
+  else document.getElementById('customToInput').focus();
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const m = document.getElementById('timeoutSetupModal');
+  if (m) m.addEventListener('click', function(e){ if (e.target === this) closeTimeoutSetup(); });
+});
+
+
+// ── Timeouts ─────────────────────────────────────────
+function useTimeout(team) {
+  if (team === 'home') {
+    if (homeTimeouts <= 0) return;
+    homeTimeouts--;
+    updateTimeoutDisplay('homeTimeoutsCount', homeTimeouts);
+    buildTimeoutDots('homeTimeoutDots', homeTimeouts, 'home');
+  } else {
+    if (awayTimeouts <= 0) return;
+    awayTimeouts--;
+    updateTimeoutDisplay('awayTimeoutsCount', awayTimeouts);
+    buildTimeoutDots('awayTimeoutDots', awayTimeouts, 'away');
+  }
+  syncState();
+}
+function restoreTimeout(team) {
+  if (team === 'home') {
+    if (homeTimeouts >= MAX_TIMEOUTS) return;
+    homeTimeouts++;
+    updateTimeoutDisplay('homeTimeoutsCount', homeTimeouts);
+    buildTimeoutDots('homeTimeoutDots', homeTimeouts, 'home');
+  } else {
+    if (awayTimeouts >= MAX_TIMEOUTS) return;
+    awayTimeouts++;
+    updateTimeoutDisplay('awayTimeoutsCount', awayTimeouts);
+    buildTimeoutDots('awayTimeoutDots', awayTimeouts, 'away');
+  }
+  syncState();
+}
+function updateTimeoutDisplay(id, count) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = count;
+  el.classList.toggle('zero', count === 0);
+}
+function buildTimeoutDots(containerId, count, team) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  for (let i = 0; i < MAX_TIMEOUTS; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'timeout-dot ' + team;
+    if (count > i) dot.classList.add('active');
+    el.appendChild(dot);
+  }
+}
+function buildAllTimeoutDots() {
+  buildTimeoutDots('homeTimeoutDots', homeTimeouts, 'home');
+  buildTimeoutDots('awayTimeoutDots', awayTimeouts, 'away');
+}
+
+
+// ── Full reset ───────────────────────────────────────
+function resetAll() {
+  if (!confirm('Reset the entire scoreboard?')) return;
+
+  homeScore = awayScore = homeFouls = awayFouls = 0;
+  period = 1;
+
+  document.getElementById('homeScore').textContent = '0';
+  document.getElementById('awayScore').textContent = '0';
+  updateFoulDisplay('homeFoulsCount', 0);
+  updateFoulDisplay('awayFoulsCount', 0);
+  document.getElementById('periodNum').textContent   = '1';
+  document.getElementById('periodLabel').textContent = '1st Quarter';
+
+  stopTimer();
+  timerCentiseconds = minsPerQuarter * 60 * 100;
+  document.getElementById('timer').textContent = formatTime(timerCentiseconds);
+
+  stopShotClock();
+  shotClockSeconds = shotClockDefault;
+  updateShotClockDisplay();
+
+  homeTimeouts = awayTimeouts = MAX_TIMEOUTS;
+  updateTimeoutDisplay('homeTimeoutsCount', homeTimeouts);
+  updateTimeoutDisplay('awayTimeoutsCount', awayTimeouts);
+  buildAllTimeoutDots();
+  setPossession('home');
+  buildDots();
+  syncState();
+}
+
+
+// ── Team name sync ───────────────────────────────────
+document.getElementById('homeName').addEventListener('input', syncState);
+document.getElementById('awayName').addEventListener('input', syncState);
+
+
+// ── Init ─────────────────────────────────────────────
+buildDots();
+buildAllTimeoutDots();
+setPossession('home');
+updateShotClockDisplay();
+document.getElementById('timer').textContent = formatTime(timerCentiseconds);
+applyTheme(THEMES[0], false);
+syncState();
+
+</script>
+<script>
+/* =====================================================
+   HOOPS PRO — pro.js
+   Roster · Stats · Standings · History
+   ===================================================== */
+
+// ── localStorage helpers ─────────────────────────────
+const DB = {
+  get: function(k)    { try { return JSON.parse(localStorage.getItem('pro_' + k)); } catch(e) { return null; } },
+  set: function(k, v) { localStorage.setItem('pro_' + k, JSON.stringify(v)); },
+};
+
+// ── Data ─────────────────────────────────────────────
+let proRoster    = DB.get('roster')    || { home: [], away: [] };
+let proStats     = DB.get('stats')     || { home: {}, away: {} };
+let proStandings = DB.get('standings') || [];
+let proHistory   = DB.get('history')  || [];
+
+let activeTab = 'scoreboard';
+
+function blankStats() { return { pts:0, reb:0, ast:0, stl:0, blk:0, to:0, pf:0, min:0 }; }
+function uid()        { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+
+// ── Tab system ───────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(function(p) {
+    p.classList.toggle('active', p.id === 'tab-' + tab);
+  });
+  if (tab === 'roster')    renderRoster();
+  if (tab === 'stats')     renderStatsTab();
+  if (tab === 'standings') renderStandings();
+  if (tab === 'history')   renderHistory();
+}
+
+
+// ── ROSTER ───────────────────────────────────────────
+function saveRoster() { DB.set('roster', proRoster); }
+
+function addPlayer(side) {
+  const numInput  = document.getElementById(side + 'PlayerNum');
+  const nameInput = document.getElementById(side + 'PlayerName');
+  const posSelect = document.getElementById(side + 'PlayerPos');
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  const player = { id: uid(), num: numInput.value.trim() || '?', name: name, pos: posSelect.value };
+  proRoster[side].push(player);
+  if (!proStats[side][player.id]) proStats[side][player.id] = blankStats();
+  saveRoster();
+  DB.set('stats', proStats);
+  numInput.value = ''; nameInput.value = ''; posSelect.value = 'PG';
+  renderRoster();
+}
+
+function removePlayer(side, id) {
+  proRoster[side] = proRoster[side].filter(function(p){ return p.id !== id; });
+  saveRoster();
+  renderRoster();
+  if (activeTab === 'stats') renderStatsTab();
+}
+
+function renderRoster() {
+  ['home','away'].forEach(function(side) {
+    const teamName = (document.getElementById(side + 'Name') || {}).value || (side === 'home' ? 'HOME' : 'AWAY');
+    const titleEl = document.getElementById(side + 'RosterTitle');
+    if (titleEl) titleEl.textContent = teamName;
+
+    const list = document.getElementById(side + 'RosterList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (proRoster[side].length === 0) {
+      list.innerHTML = '<div class="roster-empty">No players yet. Add one above.</div>';
+      return;
+    }
+    proRoster[side].forEach(function(p) {
+      const row = document.createElement('div');
+      row.className = 'roster-row';
+      row.innerHTML =
+        '<span class="roster-num">#' + p.num + '</span>' +
+        '<span class="roster-pos">' + p.pos + '</span>' +
+        '<span class="roster-name">' + p.name + '</span>' +
+        '<button class="roster-del" onclick="removePlayer(\'' + side + '\',\'' + p.id + '\')" title="Remove">&#10005;</button>';
+      list.appendChild(row);
+    });
+  });
+}
+
+
+// ── STATS ────────────────────────────────────────────
+let selectedPlayer = null;
+
+function renderStatsTab() {
+  ['home','away'].forEach(function(side) {
+    const teamName = (document.getElementById(side + 'Name') || {}).value || (side === 'home' ? 'HOME' : 'AWAY');
+    const title = document.getElementById(side + 'StatsTitle');
+    if (title) title.textContent = teamName;
+
+    const list = document.getElementById(side + 'StatsList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (proRoster[side].length === 0) {
+      list.innerHTML = '<div class="roster-empty">Add players in the Roster tab first.</div>';
+      return;
+    }
+    proRoster[side].forEach(function(p) {
+      const s = proStats[side][p.id] || blankStats();
+      const isSelected = selectedPlayer && selectedPlayer.side === side && selectedPlayer.id === p.id;
+      const row = document.createElement('div');
+      row.className = 'stats-player-row' + (isSelected ? ' selected' : '');
+      row.onclick = function(){ selectPlayer(side, p.id); };
+      row.innerHTML =
+        '<div class="stats-player-info">' +
+          '<span class="stats-num">#' + p.num + '</span>' +
+          '<span class="stats-name">' + p.name + '</span>' +
+          '<span class="stats-pos">' + p.pos + '</span>' +
+        '</div>' +
+        '<div class="stats-nums">' +
+          '<span class="stat-chip pts">' + s.pts + '<em>PTS</em></span>' +
+          '<span class="stat-chip reb">' + s.reb + '<em>REB</em></span>' +
+          '<span class="stat-chip ast">' + s.ast + '<em>AST</em></span>' +
+          '<span class="stat-chip stl">' + s.stl + '<em>STL</em></span>' +
+          '<span class="stat-chip blk">' + s.blk + '<em>BLK</em></span>' +
+          '<span class="stat-chip to">'  + s.to  + '<em>TO</em></span>' +
+          '<span class="stat-chip pf">'  + s.pf  + '<em>PF</em></span>' +
+        '</div>';
+      list.appendChild(row);
+    });
+  });
+  updateStatButtons();
+}
+
+function selectPlayer(side, id) {
+  if (selectedPlayer && selectedPlayer.side === side && selectedPlayer.id === id) {
+    selectedPlayer = null;
+  } else {
+    selectedPlayer = { side: side, id: id };
+  }
+  renderStatsTab();
+}
+
+function updateStatButtons() {
+  const panel = document.getElementById('statBtnPanel');
+  if (!panel) return;
+  if (!selectedPlayer) { panel.classList.remove('visible'); return; }
+  const p = proRoster[selectedPlayer.side].find(function(x){ return x.id === selectedPlayer.id; });
+  if (!p) { panel.classList.remove('visible'); return; }
+  const teamName = (document.getElementById(selectedPlayer.side + 'Name') || {}).value || selectedPlayer.side.toUpperCase();
+  document.getElementById('statPlayerLabel').textContent = '#' + p.num + ' ' + p.name + ' · ' + teamName;
+  panel.classList.add('visible');
+}
+
+function recordStat(stat, delta) {
+  if (!selectedPlayer) return;
+  const side = selectedPlayer.side;
+  const id   = selectedPlayer.id;
+  if (!proStats[side][id]) proStats[side][id] = blankStats();
+  proStats[side][id][stat] = Math.max(0, (proStats[side][id][stat] || 0) + delta);
+  DB.set('stats', proStats);
+  renderStatsTab();
+  const panel = document.getElementById('statBtnPanel');
+  panel.classList.add('flash-stat');
+  setTimeout(function(){ panel.classList.remove('flash-stat'); }, 180);
+}
+
+function resetGameStats() {
+  if (!confirm('Reset all player stats for this game?')) return;
+  proStats = { home: {}, away: {} };
+  proRoster.home.forEach(function(p){ proStats.home[p.id] = blankStats(); });
+  proRoster.away.forEach(function(p){ proStats.away[p.id] = blankStats(); });
+  DB.set('stats', proStats);
+  selectedPlayer = null;
+  renderStatsTab();
+}
+
+
+// ── SAVE GAME ────────────────────────────────────────
+function saveGame() {
+  const homeName    = (document.getElementById('homeName') || {}).value || 'HOME';
+  const awayName    = (document.getElementById('awayName') || {}).value || 'AWAY';
+  const homeScoreV  = parseInt((document.getElementById('homeScore') || {}).textContent) || 0;
+  const awayScoreV  = parseInt((document.getElementById('awayScore') || {}).textContent) || 0;
+
+  if (homeScoreV === 0 && awayScoreV === 0) { alert('Start the game first before saving!'); return; }
+  if (!confirm('Save this game result to history and standings?')) return;
+
+  const date = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  const boxScore = {
+    home: proRoster.home.map(function(p){ return Object.assign({}, p, { stats: Object.assign({}, proStats.home[p.id] || blankStats()) }); }),
+    away: proRoster.away.map(function(p){ return Object.assign({}, p, { stats: Object.assign({}, proStats.away[p.id] || blankStats()) }); }),
+  };
+  const game = {
+    id: uid(), date: date,
+    homeName: homeName, awayName: awayName,
+    homeScore: homeScoreV, awayScore: awayScoreV,
+    boxScore: boxScore,
+    leagueName: typeof leagueName !== 'undefined' ? leagueName : 'Hoops',
+  };
+  proHistory.unshift(game);
+  DB.set('history', proHistory);
+  updateStandings(homeName, homeScoreV, awayName, awayScoreV);
+  alert('Game saved! ✓');
+  renderHistory();
+  renderStandings();
+}
+
+function updateStandings(homeName, homeScore, awayName, awayScore) {
+  function getOrCreate(name) {
+    var t = proStandings.find(function(x){ return x.name === name; });
+    if (!t) { t = { name:name, w:0, l:0, pf:0, pa:0, streak:'W0', streakType:null, streakCount:0 }; proStandings.push(t); }
+    return t;
+  }
+  const home = getOrCreate(homeName);
+  const away = getOrCreate(awayName);
+  const homeWin = homeScore > awayScore;
+
+  home.pf += homeScore; home.pa += awayScore;
+  away.pf += awayScore; away.pa += homeScore;
+
+  if (homeWin) {
+    home.w++; away.l++;
+    home.streakType === 'W' ? home.streakCount++ : (home.streakType = 'W', home.streakCount = 1);
+    away.streakType === 'L' ? away.streakCount++ : (away.streakType = 'L', away.streakCount = 1);
+  } else {
+    away.w++; home.l++;
+    away.streakType === 'W' ? away.streakCount++ : (away.streakType = 'W', away.streakCount = 1);
+    home.streakType === 'L' ? home.streakCount++ : (home.streakType = 'L', home.streakCount = 1);
+  }
+  home.streak = (home.streakType || 'W') + home.streakCount;
+  away.streak = (away.streakType || 'W') + away.streakCount;
+
+  proStandings.sort(function(a, b) {
+    const wpA = a.w / (a.w + a.l || 1);
+    const wpB = b.w / (b.w + b.l || 1);
+    return wpB - wpA || (b.pf - b.pa) - (a.pf - a.pa);
+  });
+  DB.set('standings', proStandings);
+}
+
+
+// ── STANDINGS ────────────────────────────────────────
+function renderStandings() {
+  const tbody = document.getElementById('standingsBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (proStandings.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="standings-empty">No games saved yet. Save a game to populate standings.</td></tr>';
+    return;
+  }
+  const leader = proStandings[0];
+  proStandings.forEach(function(t, i) {
+    const gp   = t.w + t.l;
+    const wp   = gp ? (t.w / gp * 100).toFixed(1) : '0.0';
+    const diff = t.pf - t.pa;
+    const gb   = i === 0 ? '—' : (((leader.w - leader.l) - (t.w - t.l)) / 2).toFixed(1);
+    const sc   = t.streakType === 'W' ? 'streak-w' : 'streak-l';
+    const tr   = document.createElement('tr');
+    tr.className = i === 0 ? 'standings-leader' : '';
+    tr.innerHTML =
+      '<td class="rank">' + (i+1) + '</td>' +
+      '<td class="team-name-cell">' + t.name + '</td>' +
+      '<td>' + t.w + '</td>' +
+      '<td>' + t.l + '</td>' +
+      '<td>' + wp + '%</td>' +
+      '<td>' + gb + '</td>' +
+      '<td class="' + (diff >= 0 ? 'diff-pos' : 'diff-neg') + '">' + (diff >= 0 ? '+' : '') + diff + '</td>' +
+      '<td><span class="streak-badge ' + sc + '">' + t.streak + '</span></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function resetStandings() {
+  if (!confirm('Clear all standings data?')) return;
+  proStandings = [];
+  DB.set('standings', proStandings);
+  renderStandings();
+}
+
+
+// ── HISTORY ──────────────────────────────────────────
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (proHistory.length === 0) {
+    list.innerHTML = '<div class="history-empty">No games saved yet.</div>';
+    return;
+  }
+  proHistory.forEach(function(g) {
+    const homeWin = g.homeScore > g.awayScore;
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    card.innerHTML =
+      '<div class="history-card-header">' +
+        '<span class="history-date">' + g.date + '</span>' +
+        '<span class="history-league">' + (g.leagueName || 'Game') + '</span>' +
+        '<button class="history-del" onclick="deleteGame(\'' + g.id + '\')" title="Delete">&#10005;</button>' +
+      '</div>' +
+      '<div class="history-score-row">' +
+        '<span class="history-team ' + (homeWin ? 'winner' : '') + '">' + g.homeName + '</span>' +
+        '<span class="history-score ' + (homeWin ? 'winner' : '') + '">' + g.homeScore + '</span>' +
+        '<span class="history-vs">—</span>' +
+        '<span class="history-score ' + (!homeWin ? 'winner' : '') + '">' + g.awayScore + '</span>' +
+        '<span class="history-team ' + (!homeWin ? 'winner' : '') + '">' + g.awayName + '</span>' +
+      '</div>' +
+      '<button class="boxscore-toggle" onclick="toggleBoxScore(\'' + g.id + '\')">&#128196; Box Score</button>' +
+      '<div class="boxscore-wrap" id="bs-' + g.id + '" style="display:none;">' +
+        buildBoxScoreHTML(g) +
+      '</div>';
+    list.appendChild(card);
+  });
+}
+
+function buildBoxScoreHTML(g) {
+  function teamTable(players, teamName, side) {
+    if (!players || players.length === 0) return '<div class="bs-empty">No player data</div>';
+    var rows = players.map(function(p) {
+      const s = p.stats || blankStats();
+      return '<tr>' +
+        '<td>#' + p.num + '</td>' +
+        '<td class="bs-name">' + p.name + '</td>' +
+        '<td>' + p.pos + '</td>' +
+        '<td class="bs-pts">' + s.pts + '</td>' +
+        '<td>' + s.reb + '</td><td>' + s.ast + '</td>' +
+        '<td>' + s.stl + '</td><td>' + s.blk + '</td>' +
+        '<td>' + s.to  + '</td><td>' + s.pf  + '</td>' +
+      '</tr>';
+    }).join('');
+    var totals = players.reduce(function(acc, p) {
+      const s = p.stats || blankStats();
+      Object.keys(acc).forEach(function(k){ acc[k] += s[k] || 0; });
+      return acc;
+    }, { pts:0, reb:0, ast:0, stl:0, blk:0, to:0, pf:0 });
+    return '<div class="bs-team-label ' + side + '">' + teamName + '</div>' +
+      '<div class="bs-table-wrap"><table class="bs-table">' +
+      '<thead><tr><th>#</th><th>Player</th><th>Pos</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>TO</th><th>PF</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '<tfoot><tr><td colspan="3">Total</td><td class="bs-pts">' + totals.pts + '</td>' +
+        '<td>' + totals.reb + '</td><td>' + totals.ast + '</td><td>' + totals.stl + '</td>' +
+        '<td>' + totals.blk + '</td><td>' + totals.to  + '</td><td>' + totals.pf  + '</td></tr></tfoot>' +
+      '</table></div>';
+  }
+  return teamTable(g.boxScore && g.boxScore.home, g.homeName, 'home') +
+         teamTable(g.boxScore && g.boxScore.away, g.awayName, 'away');
+}
+
+function toggleBoxScore(id) {
+  const el = document.getElementById('bs-' + id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function deleteGame(id) {
+  if (!confirm('Delete this game from history?')) return;
+  proHistory = proHistory.filter(function(g){ return g.id !== id; });
+  DB.set('history', proHistory);
+  renderHistory();
+}
+function clearHistory() {
+  if (!confirm('Clear ALL game history? This cannot be undone.')) return;
+  proHistory = [];
+  DB.set('history', proHistory);
+  renderHistory();
+}
+
+
+// ── Init ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // Ensure stat objects exist for every rostered player
+  ['home','away'].forEach(function(side) {
+    proRoster[side].forEach(function(p) {
+      if (!proStats[side][p.id]) proStats[side][p.id] = blankStats();
+    });
+  });
+
+  // Tab buttons
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(){ switchTab(btn.dataset.tab); });
+  });
+
+  // Enter key adds player
+  ['home','away'].forEach(function(side) {
+    const ni = document.getElementById(side + 'PlayerName');
+    if (ni) ni.addEventListener('keydown', function(e){ if (e.key === 'Enter') addPlayer(side); });
+  });
+
+  switchTab('scoreboard');
+});
+
+</script>
+</body>
+</html>
